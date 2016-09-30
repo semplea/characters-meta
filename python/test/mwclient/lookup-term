@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys, os
+import mwclient
+
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+classes = {"personnage":["personnage","prénom","animal","divinité","dieu"],"lieu":["lieu","ville","pays","géographique"]}
+checkedClasses = []
+
+def classify(term):
+	page = site.Pages[term]
+	found = ""
+	for cat in page.categories():
+		if found!="":
+			break
+		print cat.name
+		for k, cls in classes.iteritems():
+			for cl in cls:
+				if cat.name.lower().find(cl) > -1:
+					found = k         #+" : "+cat.name
+					break
+	if found=="":
+		for cat in page.categories():
+			if not cat.name in checkedClasses:
+				checkedClasses.append(cat.name)
+				found = classify(cat.name)
+				if found!="":
+					break
+	return found
+
+site = mwclient.Site(sys.argv[1])
+site.compress = False
+
+#print 'Running configured site', sys.argv[1]
+#print 'Site has writeapi:', getattr(site, 'writeapi', False)
+
+print classify(sys.argv[2])+" ("+str(len(checkedClasses))+")"

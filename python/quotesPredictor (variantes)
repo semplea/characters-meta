@@ -1,0 +1,36 @@
+
+	#Variant 2, not really convincing
+'''
+	if (debug):
+		print("***** Quotes results for "+word+" *****")
+	spokenDistances = []
+	quotesCount = 0
+	spokenQuotes = 0
+	for index in indexesOfSentencesContainingWord:
+		sentenceprev = sentences[index-1] if (index>0) else sentences[index]
+		sentencenext = sentences[index+1] if (index<len(sentences)-1) else sentences[len(sentences)-1]
+		sentence = sentences[index]
+		if ("PUN:cit" in sentence["tags"]):
+			quotesCount = quotesCount+1
+			diff = sentence["tags"].index("PUN:cit") - sentence["words"].index(word)		# We look for citations openings AFTER the word (since we may not have the citation end mark in the case of "--" notations)
+			if (diff>0):
+				for vIdx, v in enumerate(sentence["tags"]):
+					if ("VER" in v and verbIsAboutSpeech(sentence["words"][vIdx])):
+						spokenDistance = abs(vIdx-sentence["words"].index(word));
+#						print(str(spokenDistance))
+						if (spokenDistance<6):
+							spokenDistances.append(spokenDistance/len(sentence["words"]))
+							spokenQuotes = spokenQuotes+1
+							break
+	if (debug):
+		avgSpokenDist = sum(spokenDistances)/len(spokenDistances) if len(spokenDistances)>0 else 0
+		print("Quotes="+str(quotesCount)+" / Spoken="+str(spokenQuotes)+" / Mentions="+str(len(indexesOfSentencesContainingWord))+" / SpokenDist="+str(avgSpokenDist));
+	if (quotesCount>0):
+		score = spokenQuotes/quotesCount
+		if (spokenQuotes>1):
+			return ["character", score]
+		else:
+			return ["place", ((quotesCount+10)/10-1)/(quotesCount+10)/10]
+	else:
+		return ["unknown", 0]
+'''
