@@ -23,7 +23,7 @@ os.environ["TREETAGGER_HOME"] = "/Users/cybor/Sites/3n-tools/python/tree-tagger/
 
 sys.path.append('treetagger-python')
 from treetagger3 import TreeTagger
-tt = TreeTagger(encoding='utf-8',language='french')
+tt = TreeTagger(encoding='utf-8', language='french')
 
 stopwords = [line.strip() for line in open("stopwords.txt", 'r')]
 
@@ -34,8 +34,10 @@ MINIMAL_MEAN_IDX = 0.0					# Names whose mean position in sentences are less tha
 
 _names = {}
 
+
 def isUppercased(word):
 	return len(word) > 1 and word[0].isupper() and word[len(word)-1].islower()
+
 
 def storeCount(array, key):
 	if key in array:
