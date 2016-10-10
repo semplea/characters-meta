@@ -18,7 +18,7 @@ import pickle
 import re
 import sys
 import warnings
-from nltk.internals import find_binary, find_file
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -111,10 +111,10 @@ def idxForMaxKeyValPair(array):
 	i = 0
 	maxVIdx = 0
 	for k, v in array:
-		if (v > maxV):
+		if v > maxV:
 			maxV = v
 			maxVIdx = i
-		i = i + 1
+		i += 1
 	return maxVIdx
 
 
@@ -122,7 +122,7 @@ def keyForMaxValue(_dict):
 	maxK = ''
 	maxV = 0
 	for k, v in _dict.iteritems():
-		if (v > maxV):
+		if v > maxV:
 			maxV = v
 			maxK = k
 	return maxK
@@ -156,16 +156,16 @@ def cachedOnlineDisambiguation(site_TODO, term):
 
 
 def onlineDisambiguation(site, term, originalTerm=None, debug=False, iter=1, checkedClasses=[]):
-	if (debug):
+	if debug:
 		print("***** Online results for " + term + " *****")
-	if (originalTerm == None):
+	if originalTerm is None:
 		originalTerm = term
 	cachedResult = cachedOnlineDisambiguation(site, term)
-	if (cachedResult != False and not debug):
+	if cachedResult is not False and not debug:
 		return cachedResult
 	else:
-		if (site != False):
-			if (iter < 5):
+		if site is not False:
+			if iter < 5:
 				pages = site.search(compoundNouns[originalTerm])
 				for pageData in pages:
 					page = site.Pages[pageData['title']]
@@ -174,7 +174,7 @@ def onlineDisambiguation(site, term, originalTerm=None, debug=False, iter=1, che
 					categoriesBasedDisambiguation = []
 					for cat in page.categories():
 						foundAtLeastOneCategory = True
-						if (debug):
+						if debug:
 							print(
 								compoundNouns[originalTerm] + " (as " + term + ",iter=" + str(iter) + ")" + "\t" +
 								pageData[
@@ -194,8 +194,8 @@ def onlineDisambiguation(site, term, originalTerm=None, debug=False, iter=1, che
 							for cl in cls:
 								tot_cl = tot_cl + fullText.count(cl)
 							fullTextClasses.append([k, tot_cl])
-							tot_all = tot_all + tot_cl
-						if (len(fullTextClasses) > 0):
+							tot_all += tot_cl
+						if len(fullTextClasses) > 0:
 							maxCountIdx = idxForMaxKeyValPair(fullTextClasses)  # Returns key yielding the highest count
 							confidence = ((1 / (iter * (len(checkedClasses) + 1))) * (
 								fullTextClasses[maxCountIdx][1] / tot_all) if tot_all > 0 else 0)
@@ -205,7 +205,7 @@ def onlineDisambiguation(site, term, originalTerm=None, debug=False, iter=1, che
 							# 	print str(checkedClasses)
 							# 	print str(fullTextClasses)
 							foundDisambiguation = [fullTextClasses[maxCountIdx][0], confidence]
-							if (debug):
+							if debug:
 								print(
 									originalTerm + " (" + term + ") -- full text disambiguation results: " + "\t" +
 									foundDisambiguation[0] + "\t" + str(foundDisambiguation[1]) + "\t" +
@@ -218,12 +218,12 @@ def onlineDisambiguation(site, term, originalTerm=None, debug=False, iter=1, che
 						for c in categoriesBasedDisambiguation:
 							bestCatCount = sum([k[1] for k in categoriesBasedDisambiguation if k[0] == bestCat[0]])
 						foundDisambiguation = [bestCat[0], bestCatCount / len(categoriesBasedDisambiguation)]
-						if (bestCatCount == 0):
+						if bestCatCount == 0:
 							print(originalTerm)
 							print(term)
 							print(bestCat[0])
 							print(str(categoriesBasedDisambiguation))
-						if (debug):
+						if debug:
 							print(
 								originalTerm + " (" + term + ") -- cat based disambiguation results: " + "\t" +
 								foundDisambiguation[0] + "\t" + str(foundDisambiguation[1]) + "\t" +
@@ -237,7 +237,7 @@ def onlineDisambiguation(site, term, originalTerm=None, debug=False, iter=1, che
 								[w for w in onlineDisambiguationStopwords if w in cat.name.lower()]) == 0:
 							checkedClasses.append(cat.name)
 							return onlineDisambiguation(site, cat.name, originalTerm, debug, iter + 1, checkedClasses)
-		elif (debug):
+		elif debug:
 			print("Wiki Lookup disabled")
 		return [u'unknown', 0]
 
@@ -264,7 +264,7 @@ for root, dirs, files in os.walk(getScriptPath() + "/classifiersdata/proximitywo
 
 
 def obviousPredictor(word, indexesOfSentencesContainingWord, sentences, debug=False):
-	if (debug):
+	if debug:
 		print("***** Obvious results for " + word + " *****")
 	scores = {}
 	predictingWords = []
@@ -289,16 +289,16 @@ def obviousPredictor(word, indexesOfSentencesContainingWord, sentences, debug=Fa
 	for index in indexesOfSentencesContainingWord:
 		sentence = sentences[index]
 		for wIdx, w in enumerate(sentence["words"]):
-			if (w == word):
+			if w == word:
 				w1 = ''
 				w2 = ''
 				w3 = ''
 				w0 = compoundNouns[w].split(' ')[0].lower()
-				if (wIdx > 1):
+				if wIdx > 1:
 					w1 = sentence['words'][wIdx - 1].lower()
-				if (wIdx > 2):
+				if wIdx > 2:
 					w2 = sentence['words'][wIdx - 2].lower()
-				if (wIdx > 3):
+				if wIdx > 3:
 					w3 = sentence['words'][wIdx - 3].lower()
 				if (w0 in obviousChars) or (w1 in obviousChars) or (w2 in obviousChars and w1 in nobliaryParticles):
 					predictingWords.append([w0, w1, w2])
@@ -306,20 +306,20 @@ def obviousPredictor(word, indexesOfSentencesContainingWord, sentences, debug=Fa
 				if (w1 in obviousPlaces) or (w2 in obviousPlaces and w1 in ['de', 'du', "d'"]):
 					predictingWords.append([w1, w2])
 					storeCount(scores, 'place')
-				if (w.lower() in obviousOthers):
+				if w.lower() in obviousOthers:
 					predictingWords.append(w)
 					storeCount(scores, 'other')
-	if (debug):
+	if debug:
 		print(str(predictingWords) + "\t" + str(scores))
 	maxV = 0
 	maxK = u'unknown'
 	scoresSum = 0
 	for k, v in scores.iteritems():
 		scoresSum = scoresSum + max(0, v)
-		if (v > maxV):
+		if v > maxV:
 			maxV = v
 			maxK = k
-	if (scoresSum > (2 * len(scores))):
+	if scoresSum > (2 * len(scores)):
 		# we trust the result only if we saw enough samples, that is on average more than two by category
 		return [maxK, maxV / scoresSum]
 	else:
@@ -329,17 +329,17 @@ def obviousPredictor(word, indexesOfSentencesContainingWord, sentences, debug=Fa
 # BOT 2 ################################################################################################################
 
 def positionPredictor(word, indexesOfSentencesContainingWord, sentences, debug=False):
-	if (debug):
+	if debug:
 		print("***** Position results for " + word + " *****")
 	positions = []
 	for index in indexesOfSentencesContainingWord:
 		sentence = sentences[index]
 		for wIdx, w in enumerate(sentence["words"]):
-			if (w == word):
+			if w == word:
 				# if (sentence["tags"][wIdx]!='NAM'):
 				positions.append(float(wIdx) / float(len(sentence["words"])))
 	meanpos = np.mean(np.array(positions))
-	if (debug):
+	if debug:
 		print(word + "\tavg(pos)=" + str(meanpos) + "\tstd(pos)=" + str(np.std(positions)) + "\tcount=" + str(
 			len(indexesOfSentencesContainingWord)))
 	return ['place' if (meanpos > 0.45) else 'character', abs(0.45 - meanpos)]
@@ -356,29 +356,29 @@ for root, dirs, files in os.walk(getScriptPath() + "/classifiersdata/proximitywo
 
 
 def localProximityPredictor(word, surroundingTerms, debug=False):
-	if (debug):
+	if debug:
 		print("***** LocalProx results for " + word + " *****")
 		print(word + " <-> " + ", ".join(surroundingTerms.keys()))
 	class_probas = {}
 	for possible_class in classes_local:
 		class_probas[possible_class] = 0
 		for class_word in classes_local[possible_class]:
-			if (class_word in surroundingTerms):
+			if class_word in surroundingTerms:
 				class_probas[possible_class] = class_probas[possible_class] + surroundingTerms[class_word]
-				if (debug):
+				if debug:
 					print(word + "\t" + class_word + " --> " + possible_class + " (x" + str(
 						surroundingTerms[class_word]) + ")")
 	numberOfClues = sum(class_probas.values())
 	maxProba = 0
 	confidence = 0
 	maxProbaClass = u"unknown"
-	if (numberOfClues > 2):
+	if numberOfClues > 2:
 		for possible_class in class_probas:
 			if class_probas[possible_class] > maxProba:
 				maxProba = class_probas[possible_class]
 				confidence = float(maxProba) / float(numberOfClues)
 				maxProbaClass = possible_class
-	if (debug):
+	if debug:
 		print(word + "\t" + maxProbaClass + "\t" + str(confidence))
 	return [maxProbaClass, confidence]
 
@@ -387,19 +387,19 @@ def localProximityPredictor(word, surroundingTerms, debug=False):
 
 def getSurroundings(array, idx):
 	surroundings = []
-	if (idx > 1):
+	if idx > 1:
 		surroundings.append(array[idx - 2])
 	else:
 		surroundings.append('---')
-	if (idx > 0):
+	if idx > 0:
 		surroundings.append(array[idx - 1])
 	else:
 		surroundings.append('---')
-	if (idx < len(array) - 1):
+	if idx < len(array) - 1:
 		surroundings.append(array[idx + 1])
 	else:
 		surroundings.append('---')
-	if (idx < len(array) - 2):
+	if idx < len(array) - 2:
 		surroundings.append(array[idx + 2])
 	else:
 		surroundings.append('---')
@@ -407,7 +407,7 @@ def getSurroundings(array, idx):
 
 
 def structuralPredictor(word, indexesOfSentencesContainingWord, sentences, debug=False):
-	if (debug):
+	if debug:
 		print("***** Structural results for " + word + " *****")
 	scores = {u"place": 0, u"character": 0, u"other": 0, u"unknown": 0}
 	# Prediction score variable. If results turns out negative, we assume a place. If positive, a character.
@@ -418,46 +418,46 @@ def structuralPredictor(word, indexesOfSentencesContainingWord, sentences, debug
 	for index in indexesOfSentencesContainingWord:
 		sentence = sentences[index]
 		for wIdx, w in enumerate(sentence["words"]):
-			if (w == word):
-				if ("VER:" in sentence["tags"][wIdx]):
+			if w == word:
+				if "VER:" in sentence["tags"][wIdx]:
 					# if the word itself is tagged as a verb, we get highly suspicious…
-					scores[u"unknown"] = scores[u"unknown"] + 1.0
+					scores[u"unknown"] += 1.0
 				else:
 					surroundings = [tag.split(':')[0] for tag in getSurroundings(sentence["tags"], wIdx)]
-					if (debug):
+					if debug:
 						print(word + " [" + sentence["tags"][wIdx] + "]," + ",".join(surroundings))
-					if ("VER" == surroundings[2]):
-						scores[u"character"] = scores[u"character"] + 2.0
-					elif ("VER" in surroundings):
-						scores[u"character"] = scores[u"character"] + 0.5
-					if ("NAM" == surroundings[2]):
-						scores[u"character"] = scores[u"character"] + 1.0
-					if (surroundings[0] == "PRP" or surroundings[1] == "PRP"):
-						scores[u"place"] = scores[u"place"] + 1.0
-					if ("VER" == surroundings[1]):
-						scores[u"place"] = scores[u"place"] + 0.5
-					if (surroundings[1] == "DET"):
-						scores[u"place"] = scores[u"place"] + 0.5
+					if "VER" == surroundings[2]:
+						scores[u"character"] += 2.0
+					elif "VER" in surroundings:
+						scores[u"character"] += 0.5
+					if "NAM" == surroundings[2]:
+						scores[u"character"] += 1.0
+					if surroundings[0] == "PRP" or surroundings[1] == "PRP":
+						scores[u"place"] += 1.0
+					if "VER" == surroundings[1]:
+						scores[u"place"] += 0.5
+					if surroundings[1] == "DET":
+						scores[u"place"] += 0.5
 						pass
-					if (surroundings[1] == "PRP" and surroundings[2] == "---"):
-						scores[u"other"] = scores[u"other"] + 1.0
-					if (surroundings[1] == "PUN"):  # noise detection (wrongly tokenized sentences).
-						scores[u"unknown"] = scores[u"unknown"] + 1.0
+					if surroundings[1] == "PRP" and surroundings[2] == "---":
+						scores[u"other"] += 1.0
+					if surroundings[1] == "PUN":  # noise detection (wrongly tokenized sentences).
+						scores[u"unknown"] += 1.0
 					else:
-						scores[u"unknown"] = scores[u"unknown"] - 1.0
+						scores[u"unknown"] -= 1.0
 					# noise detection (wrongly tokenized sentences). If this happens, needs to be compensated 2 times
-					if (surroundings[0] == "---" and surroundings[1] == "---"):
-						scores[u"unknown"] = scores[u"unknown"] + 2.0
+					if surroundings[0] == "---" and surroundings[1] == "---":
+						scores[u"unknown"] += 2.0
 					else:
-						scores[u"unknown"] = scores[u"unknown"] - 1.0
-	if (debug):
+						scores[u"unknown"] -= 1.0
+	if debug:
 		print(' --> ' + str(scores))
 	maxV = 0
 	maxK = u'unknown'
 	scoresSum = 0
 	for k, v in scores.iteritems():
 		scoresSum = scoresSum + max(0, v)
-		if (v > maxV):
+		if v > maxV:
 			maxV = v
 			maxK = k
 	return [maxK, maxV / scoresSum if scoresSum > 0 else 0]
@@ -493,13 +493,13 @@ def verbIsAboutSpeech(w):
 def getQuotesPredictorThreshold(words, wsent, sentences, debug):
 	speakMentionsRatios = []
 	for w in words:
-		quotesCount = 0;
+		quotesCount = 0
 		for index in wsent[w]:
-			if ("PUN:cit" in sentences[index]["tags"]):
-				quotesCount = quotesCount + 1
+			if "PUN:cit" in sentences[index]["tags"]:
+				quotesCount += 1
 		speakMentionsRatios.append(quotesCount / len(wsent[w]))
 	ratio = np.mean(speakMentionsRatios)
-	if (debug):
+	if debug:
 		print("***********************************************************")
 		print("quotesPredictorThreshold = " + str(ratio))
 		print("***********************************************************")
@@ -507,22 +507,22 @@ def getQuotesPredictorThreshold(words, wsent, sentences, debug):
 
 
 def quotesPredictor(word, indexesOfSentencesContainingWord, sentences, quotesPredictorThreshold, debug=False):
-	if (debug):
+	if debug:
 		print("***** Quotes/Mentions results for " + word + " *****")
 	quotesCount = 0
 	for index in indexesOfSentencesContainingWord:
 		s = sentences[index]
-		if ("PUN:cit" in s["tags"]):
-			quotesCount = quotesCount + 1
-	if (quotesCount > 0):
+		if "PUN:cit" in s["tags"]:
+			quotesCount += 1
+	if quotesCount > 0:
 		score = quotesCount / len(indexesOfSentencesContainingWord)
-		if (debug):
+		if debug:
 			print("Quotes=" + str(quotesCount) + " / Mentions=" + str(
 				len(indexesOfSentencesContainingWord)) + " / Score=" + str(score));
-		if (score >= quotesPredictorThreshold):
+		if score >= quotesPredictorThreshold:
 			return ["character", pow((score - quotesPredictorThreshold) / (1 - quotesPredictorThreshold), 2)]
 		else:
-			return ["place", pow((quotesPredictorThreshold - score) / (quotesPredictorThreshold), 2)]
+			return ["place", pow((quotesPredictorThreshold - score) / quotesPredictorThreshold, 2)]
 	else:
 		return ["place", 0.9]
 
@@ -576,12 +576,12 @@ def tokenizeAndStructure(text):
 	sent_words = []
 	sent_tags = []
 	for tag in taggedText:
-		if ("_CHAP_" in tag[0]):
-			if (cnum != ''):
+		if "_CHAP_" in tag[0]:
+			if cnum != '':
 				chaps[cnum] = chapter_sentences_idx
 				chapter_sentences_idx = []
 			cnum = tag[0][6:]
-		elif (tag[1] == u"SENT"):
+		elif tag[1] == u"SENT":
 			nostop = [w for w in sent_words if w not in stopwords]
 			sent = {u"words": sent_words, u"tags": sent_tags, u"nostop": nostop}
 			chapter_sentences_idx.append(len(allsentences))
@@ -600,7 +600,7 @@ def bestChoice(_predictions, weights=[], debug=False):
 	predictions = copy.deepcopy(_predictions)
 	if len(weights) == 0:
 		weights = [1 for p in predictions]
-	if (debug):
+	if debug:
 		print(" - Predictions: " + str(predictions))
 	zeroProbas = []
 	duplicates = []
@@ -613,7 +613,7 @@ def bestChoice(_predictions, weights=[], debug=False):
 		elif p[1] == 0:
 			zeroProbas.append(idx)
 		# Apply weighting
-		elif (weights[idx] == 0):
+		elif weights[idx] == 0:
 			zeroProbas.append(idx)
 		elif (weights[idx] > 1) and not p[1] == 0:
 			for n in range(1, weights[idx]):
@@ -623,7 +623,7 @@ def bestChoice(_predictions, weights=[], debug=False):
 	zeroProbas.sort(reverse=True)
 	for pIdx in zeroProbas:
 		del predictions[pIdx]  # Remove predictions with probability 0
-	if (len(predictions) > 0):
+	if len(predictions) > 0:
 		maxProbaIdx = idxForMaxKeyValPair(predictions)  # Returns key yielding the highest probabilities
 	else:
 		return ['unknown', 0]
@@ -635,16 +635,16 @@ def bestChoice(_predictions, weights=[], debug=False):
 	allAgree = True
 	agreeOnClass = predictions[0][0]
 	for p in predictions:
-		if (p[0] != agreeOnClass):
+		if p[0] != agreeOnClass:
 			allAgree = False
-	if (allAgree):
+	if allAgree:
 		return predictions[maxProbaIdx]  # here we could also return [agreeOnClass, 1]
 	else:
 		predClasses = {}
 		for prediction in predictions:
 			storeCount(predClasses, prediction[0])
 		# we have exactly as many classes as predictions (i.e. each predictor said something different)
-		if (len(predClasses) == len(predictions)):
+		if len(predClasses) == len(predictions):
 			return predictions[maxProbaIdx]
 		else:
 			mostRepresentedClassesCount = predClasses[max(predClasses.iteritems(), key=operator.itemgetter(1))[0]]
@@ -661,34 +661,34 @@ def detect_ucwords(fulltext, sentences, debug=False):
 
 	for sent in sentences:
 		s = sent[u"nostop"]
-		if (len(s) > 1):
+		if len(s) > 1:
 			grams5 = zip(s[1:-4], s[2:-3], s[3:-2], s[4:-1], s[5:])
 			grams3 = zip(s[1:-2], s[2:-1], s[3:])
 			grams2 = zip(s[1:-1], s[2:])
 			grams1 = zip(s[1:])
 			sentUCWords = []
 			for gram in grams5:
-				if (gram[0][0].isupper() and (gram[1] in [u'-', u"'"]) and (gram[3] in [u'-', u"'"])):
+				if gram[0][0].isupper() and (gram[1] in [u'-', u"'"]) and (gram[3] in [u'-', u"'"]):
 					sentUCWords.append(gram)
 			for gram in grams3:
-				if (gram[0][0].isupper() and gram[2][0].isupper()):
-					if (gram[1] in nobliaryParticles):
+				if gram[0][0].isupper() and gram[2][0].isupper():
+					if gram[1] in nobliaryParticles:
 						sentUCWords.append(gram)
-					elif (gram[1] in [u"'"]):
+					elif gram[1] in [u"'"]:
 						sentUCWords.append(gram)
-					elif (gram[1][0].isupper()):
+					elif gram[1][0].isupper():
 						sentUCWords.append(gram)
 			for gram in grams2:
-				if (gram[0][0].isupper() and gram[1][0].isupper()):
+				if gram[0][0].isupper() and gram[1][0].isupper():
 					sentUCWords.append(gram)
 			sentUCWords_flat = [w for _tuple in sentUCWords for w in _tuple]
 			for gram in grams1:
-				if (gram[0][0].isupper() and not (gram[0] in sentUCWords_flat)):
+				if gram[0][0].isupper() and not (gram[0] in sentUCWords_flat):
 					sentUCWords.append(gram)
 			for gram in sentUCWords:
 				gramStrRepresentation = u" ".join(gram).replace(u"' ", u"'")
 				storeCount(_ucwords, gramStrRepresentation)
-	if (debug):
+	if debug:
 		print("***** UC Words found *****")
 		print(", ".join(_ucwords.keys()))
 		print("**************************")
@@ -736,8 +736,8 @@ def joinCompoundNouns(fulltext, ucwords):
 	for w in allucwords:
 		if (u" " in w) or (u"'" in w):
 			wjoined = w.replace(u" ", u"").replace(u".", u"").replace(u"'", u"").encode("utf-8")
-			if (w.endswith("'")):
-				wjoined = wjoined + u"'"
+			if w.endswith("'"):
+				wjoined += u"'"
 			fulltext = fulltext.replace(w, wjoined)
 			compoundNouns[wjoined] = w
 		else:
@@ -750,15 +750,15 @@ def confirmProperNoun(word, wmedianidx, wsentences, ucwords):
 		if debug:
 			print("Word ignored: " + word + "  [len<" + str(MIN_NOUN_LENGTH) + "]")
 		return False
-	if (word.lower() in stopwords):
+	if word.lower() in stopwords:
 		if debug:
 			print("Word ignored: " + word + "  [in general stopwords" + "]")
 		return False
-	if (word in stopwords_pnouns):
+	if word in stopwords_pnouns:
 		if debug:
 			print("Word ignored: " + word + "  [in proper nouns stopwords" + "]")
 		return False
-	if (wmedianidx <= MINIMAL_MEDIAN_IDX):
+	if wmedianidx <= MINIMAL_MEDIAN_IDX:
 		if debug:
 			print("Word ignored: " + word + "  [median idx=" + str(wmedianidx) + "]")
 		return False
@@ -789,21 +789,23 @@ def removeFalsePositives(sentences, wmedianidx, wprev, wnext, wsent, ucwords):
 		for w in [w for _sub in [wprev[word].keys(), wnext[word].keys()] for w in _sub]:
 			storeCount(proxWords, w)
 		rejected = False
-		if (not confirmProperNoun(word, medianidx, [sentences[i] for i in wsent[word]], ucwords)):
+		if not confirmProperNoun(word, medianidx, [sentences[i] for i in wsent[word]], ucwords):
 			rejected = True
-		if (word.endswith('s') and word[:-1] in ucwords):
+		if word.endswith('s') and word[:-1] in ucwords:
 			rejected = True
 			if debug:
 				print("Word ignored: " + word + " supposed plural form of " + word[:-1])
-		if (rejected):
+		if rejected:
 			del ucwords[word]
 			del wprev[word]
 			del wnext[word]
 			del wsent[word]
 		# else:
-		# 	preditions = [positionPredictor(word, wsent[word], sentences, debug), localProximityPredictor(word, proxWords, debug), onlineDisambiguation(mwsite, word, word, debug)]
+		# 	preditions = [positionPredictor(word, wsent[word], sentences, debug),
+		#   localProximityPredictor(word, proxWords, debug), onlineDisambiguation(mwsite, word, word, debug)]
 		# 	best = bestChoice(preditions)
 		# 	print(best[0]+"\t"+str(best[1]))
+
 
 def getNounsSurroundings(sentences, ucwords, fulltext):
 	wprev = {}
@@ -821,7 +823,7 @@ def getNounsSurroundings(sentences, ucwords, fulltext):
 		i = 0.0
 		for sentIdx, sent in enumerate(sentences):
 			wpos = getIdxOfWord(sent["nostop"], word)
-			if (wpos > -1):
+			if wpos > -1:
 				wsent[word].append(sentIdx)
 				wPositions.append(wpos)
 				#  update the mean position value (cumulative recompute)
@@ -830,8 +832,8 @@ def getNounsSurroundings(sentences, ucwords, fulltext):
 					storeCount(wprev[word], stem(sent["nostop"][wpos - 1]))
 				if wpos < len(sent["nostop"]) - 1:
 					storeCount(wnext[word], stem(sent["nostop"][wpos + 1]))
-				i = i + 1.0
-		if (len(wPositions) > 0):
+				i += 1.0
+		if len(wPositions) > 0:
 			wmeanidx[word] = np.mean(np.array(wPositions))
 			wmedidx[word] = np.median(np.array(wPositions))
 		else:
@@ -843,7 +845,7 @@ def getNounsSurroundings(sentences, ucwords, fulltext):
 def removeBelowThreshold(sentences, wmeanidx, wprev, wnext, wsent, ucwords):
 	allucwords = ucwords.keys()
 	for word in allucwords:
-		if (len(wsent[word]) >= WORD_FREQUENCE_THRESHOLD):
+		if len(wsent[word]) >= WORD_FREQUENCE_THRESHOLD:
 			ucwords[word] = len(wsent[word])
 		else:
 			del ucwords[word]
@@ -903,14 +905,14 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 			chapters_lines_buff.append(u'. _CHAP_' + chapter_number + u'. ' + line)
 		fulltext = u" ".join(chapters_lines_buff)
 
-		if (dynamicFrequenceFilter):
+		if dynamicFrequenceFilter:
 			global WORD_FREQUENCE_THRESHOLD
 			allwords = len(re.findall(r'\w+', fulltext))
 			# WORD_FREQUENCE_THRESHOLD = round(6+((math.log(math.log(allwords))*allwords)/10000)/5)
 			WORD_FREQUENCE_THRESHOLD = round(6 + (allwords / 10000) / 4)
 
 		[chapters, sentences] = tokenizeAndStructure(fulltext)
-		if (focus == ''):
+		if focus == '':
 			ucwords = detect_ucwords(fulltext, sentences, debug)
 			fulltext = joinCompoundNouns(fulltext, ucwords)
 			[chapters, sentences] = tokenizeAndStructure(fulltext)
@@ -933,7 +935,7 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 		sorted_ucw = sorted(ucwords.items(), key=operator.itemgetter(1))
 		sorted_ucw.reverse()
 		weights = [3, 1, 1, 1, 1]
-		if (mwsite != False):
+		if mwsite:
 			weights.append(1)
 		for word, wcount in sorted_ucw:
 			if not word in compoundNouns:
@@ -949,14 +951,15 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 				# structuralPredictor2(word, wsent[word], sentences, debug),
 				quotesPredictor(word, wsent[word], sentences, quotesPredictorThreshold, debug)
 			]
-			if (mwsite != False):
+			if mwsite:
 				allpredictions[word].append(onlineDisambiguation(mwsite, word, word, debug))
-			if (len(allpredictions[word]) != len(weights)):
+			if len(allpredictions[word]) != len(weights):
 				print('ERROR: Weights and predictors mismatch.')
 				exit()
-			if (debug):
+			if debug:
 				print('-----------------------------------')
-		# Tweak weights according to allpredictions results. For instance, remove predictors whose % deviate too much from the others
+		# Tweak weights according to allpredictions results.
+		# For instance, remove predictors whose % deviate too much from the others
 		# charsPlacesRatio = []
 		# predictorRatioCounts = []
 		#
@@ -974,21 +977,21 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 		# if (debug):
 		# 	print('Adjusted predictors weights: '+str(weights))
 
-		if (saveResults):
+		if saveResults:
 			with codecs.open(getScriptPath() + u"/cache/results-" + bookfile.split(u"/")[-1], 'wb', 'utf8') as f:
 				pickle.dump(allpredictions, f)
 
 		for word, wcount in sorted_ucw:
-			if (debug): print(word)
+			if debug: print(word)
 			best = bestChoice(allpredictions[word], weights, debug)
-			if (debug): print(' --> ' + best[0])
-			if (best[0] in finalWordClasses.keys()):
+			if debug: print(' --> ' + best[0])
+			if best[0] in finalWordClasses.keys():
 				finalWordClasses[best[0]].append(word)
 			if len(benchmark) > 0:
-				if (word in benchmark.keys()):
-					benchmarkValues["found"] = benchmarkValues["found"] + 1
-					if (benchmark[word] == best[0]):
-						benchmarkValues["correct"] = benchmarkValues["correct"] + 1
+				if word in benchmark.keys():
+					benchmarkValues["found"] += 1
+					if benchmark[word] == best[0]:
+						benchmarkValues["correct"] += 1
 					for idx, p in enumerate(allpredictions[word]):
 						benchmarkValues["predictors"][idx].append(1 if p[0] == benchmark[word] else 0)
 					if verbose:
@@ -1000,10 +1003,11 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 			else:
 				if verbose:
 					print(word + "\t" + best[0] + "\t" + str(best[1]) + "\t" + str(wcount))
-			if (debug):
+			if debug:
 				print('===================================')
 			# if wcount>(ucwtotcount/500):
-			# 	print("OK: \t"+word+"\t"+str(meanidx)+"\t"+str(ucwords[word])+"\t"+localProximityPredictor(word, proxWords)+"\ts="+"\t"+','.join(proxWords))
+			# 	print("OK: \t"+word+"\t"+str(meanidx)+"\t"+str(ucwords[word])+"\t"+
+			#   localProximityPredictor(word, proxWords)+"\ts="+"\t"+','.join(proxWords))
 			# elif debug:
 			# 	print(word+"\t"+"(ignored, "+str(wcount)+"/"+str(ucwtotcount)+")")
 		if len(benchmark) > 0:
@@ -1015,7 +1019,7 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 			ref_count = {}  # reference (number of words that should fall in each category, by predictor; last idx=best choice)
 			attr_count = {}  # attributions (number of words that fell in each category, by predictor; last idx=best choice)
 			for cat in ['character', 'place']:
-				ncat = ncat + 1
+				ncat += 1
 				correct_predictors[cat] = {}
 				attr_count[cat] = {}
 				ref_count[cat] = 0
@@ -1024,8 +1028,8 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 					attr_count[cat][pred_idx] = []
 				for word, word_predictions in allpredictions.iteritems():
 					if word in benchmark.keys():
-						if (benchmark[word] == cat):  # we only consider the words from this effective category
-							ref_count[cat] = ref_count[cat] + 1
+						if benchmark[word] == cat:  # we only consider the words from this effective category
+							ref_count[cat] += 1
 							for pred_idx, prediction in enumerate(word_predictions):
 								correct_predictors[cat][pred_idx].append(1 if (prediction[0] == cat) else 0)
 							correct_predictors[cat][pred_idx + 1].append(
@@ -1047,10 +1051,10 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 						(sum(pred_correct) / sum(attr_count[cat][idx]) if sum(attr_count[cat][idx]) > 0 else 1))
 					recall_by_classes[idx].append((sum(pred_correct) / cat_count if cat_count > 0 else 0))
 			missing_words = list(set(benchmark.keys()) - set([w for ws in finalWordClasses.values() for w in ws]))
-			if (verbose):
-				if (len(unknown_words) > 0):
+			if verbose:
+				if len(unknown_words) > 0:
 					print("! UNKNOWN WORDS: " + (", ".join(set(unknown_words))))
-				if (len(missing_words) > 0):
+				if len(missing_words) > 0:
 					print("! MISSING WORDS: " + (", ".join(missing_words)))
 				for idx in precision_by_classes.keys():
 					print(str(idx) + "\t" + "P=" + str(sum(precision_by_classes[idx]) / ncat) + "\t" + "R=" + str(
@@ -1073,10 +1077,10 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 			print('Total characters occurences: ' + str(sum([ucwords[x] for x in finalWordClasses['character']])))
 			print('Total places occurences: ' + str(sum([ucwords[x] for x in finalWordClasses['place']])))
 
-		if (mwsite != False):
+		if mwsite:
 			updateCachedResults(mwsite)
 		if len(benchmark) > 0:
-			if (benchmarkValues["found"] > 0):
+			if benchmarkValues["found"] > 0:
 				if verbose:
 					print("========== BENCHMARK RESULTS ============")
 					print("Overall score: " + str(benchmarkValues["correct"] / benchmarkValues["found"]))
@@ -1125,8 +1129,8 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 			"#92896B"]  # http://godsnotwheregodsnot.blogspot.ru/
 		nbCharacters = len(finalWordClasses['character'])
 		if graphs:
-			if (nbCharacters > 0):
-				if (nbCharacters > MAX_CHARACTERS_GRAPH):
+			if nbCharacters > 0:
+				if nbCharacters > MAX_CHARACTERS_GRAPH:
 					finalWordClasses['character'] = [w[0] for w in sorted_ucw if w[0] in finalWordClasses['character']][
 													0:MAX_CHARACTERS_GRAPH]
 
@@ -1140,12 +1144,12 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 					chaptersPlaces[cnum] = (finalWordClasses['place'].index(chapterPlace) if chapterPlace != '' else -1)
 
 				eventGraph = {}
-				if (not api):
+				if not api:
 					fig, ax = plt.subplots(1, 1, figsize=(18, 10))
 					ax.get_xaxis().tick_bottom()
 					ax.get_yaxis().tick_left()
-					plt.xticks(range(0, len(chapters) * nbCharacters, nbCharacters), chapters.keys(), fontsize=10,
-							   rotation=90)
+					plt.xticks(
+						range(0, len(chapters) * nbCharacters, nbCharacters), chapters.keys(), fontsize=10, rotation=90)
 					plt.yticks(range(0, len(finalWordClasses['place']), 1), finalWordClasses['place'], fontsize=10)
 
 					for w1idx, w1 in enumerate(finalWordClasses['character']):
@@ -1153,27 +1157,27 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 						ys = []
 						cidx = 0
 						for cnum, chapsentencesidx in chapters.iteritems():
-							if (chaptersPlaces[cnum] != -1):
+							if chaptersPlaces[cnum] != -1:
 								intersect = list(set(wsent[w1]) & set(chapsentencesidx))
 								if len(intersect) > 0:
 									xs.append(cidx * nbCharacters + w1idx)
 									ys.append(chaptersPlaces[cnum])
-							cidx = cidx + 1
+							cidx += 1
 						# if the considered charactered is quoted more than once in this chapter, we add it to the list
-						if (len(xs) > 1):
+						if len(xs) > 1:
 							xs_sorted, ys_sorted = zip(*sorted(zip(xs, ys), key=operator.itemgetter(0), reverse=False))
-							plt.plot(xs_sorted, ys_sorted, 'o-', lw=2,
-									 color=color_sequence[w1idx % len(color_sequence)], label=w1, markersize=8,
-									 markeredgewidth=0.0, alpha=0.7)
-			# x_linspace = np.linspace(min(xs_sorted), max(xs_sorted), num=100, endpoint=True)
-			# xs_sorted = np.array(xs_sorted)
-			# ys_sorted = np.array(ys_sorted)
-			# if (len(xs_sorted)>3):
-			# 	f2 = interp1d(xs_sorted, ys_sorted, kind='cubic')
-			# else:
-			# 	f2 = interp1d(xs_sorted, ys_sorted, kind='slinear')
-			# plt.plot(xs_sorted, ys_sorted, 'o', x_linspace, f2(x_linspace), '-', lw=2, color=color_sequence[
-						# w1idx % len(color_sequence)], label=w1, markersize=8, markeredgewidth=0.0, alpha=0.7)
+							plt.plot(
+								xs_sorted, ys_sorted, 'o-', lw=2, color=color_sequence[w1idx % len(color_sequence)],
+								label=w1, markersize=8, markeredgewidth=0.0, alpha=0.7)
+					# x_linspace = np.linspace(min(xs_sorted), max(xs_sorted), num=100, endpoint=True)
+					# xs_sorted = np.array(xs_sorted)
+					# ys_sorted = np.array(ys_sorted)
+					# if (len(xs_sorted)>3):
+					# 	f2 = interp1d(xs_sorted, ys_sorted, kind='cubic')
+					# else:
+					# 	f2 = interp1d(xs_sorted, ys_sorted, kind='slinear')
+					# plt.plot(xs_sorted, ys_sorted, 'o', x_linspace, f2(x_linspace), '-', lw=2, color=color_sequence[
+					# w1idx % len(color_sequence)], label=w1, markersize=8, markeredgewidth=0.0, alpha=0.7)
 
 					ax = plt.subplot(111)
 					box = ax.get_position()
@@ -1189,12 +1193,12 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 						ys = []
 						cidx = 0
 						for cnum, chapsentencesidx in chapters.iteritems():
-							if (chaptersPlaces[cnum] != -1):
+							if chaptersPlaces[cnum] != -1:
 								intersect = list(set(wsent[w1]) & set(chapsentencesidx))
 								if len(intersect) > 0:
 									xs.append(cidx)
 									ys.append(chaptersPlaces[cnum])
-							cidx = cidx + 1
+							cidx += 1
 						eventGraph['characters'][w1] = zip(
 							*sorted(zip(xs, ys), key=operator.itemgetter(0), reverse=False))
 					jsonOut['eventGraph'] = eventGraph
@@ -1203,9 +1207,9 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 				for w1 in finalWordClasses['character']:
 					for w2 in [w for w in finalWordClasses['character'] if w != w1]:
 						intersect = list(set(wsent[w1]) & set(wsent[w2]))
-						if (len(intersect) > 0):
+						if len(intersect) > 0:
 							intersects.append([w1, w2, len(intersect)])
-				if (api):
+				if api:
 					jsonOut['charsGraph'] = intersects
 				else:
 					print("__________ Characters graph ______________")
@@ -1220,11 +1224,11 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 				for w1 in finalWordClasses['character']:
 					bipRelations[w1] = {}
 					for cnum, chapsentencesidx in chapters.iteritems():
-						if (chaptersPlaces[cnum] != -1):
+						if chaptersPlaces[cnum] != -1:
 							if len(list(set(wsent[w1]) & set(chapsentencesidx))) > 0:
 								storeCount(bipRelations[w1], finalWordClasses['place'][chaptersPlaces[cnum]])
 
-				if (api):
+				if api:
 					jsonOut['bipGraph'] = bipRelations
 				else:
 					print("__________ Bipartite graph ______________")
@@ -1241,7 +1245,7 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 			else:
 				print("Plot impossible: no character found.");
 
-		if (len(benchmark) > 0):
+		if len(benchmark) > 0:
 			# print(bookfile+"\t"+str(sum(precision_by_classes[len(precision_by_classes)-1])/ncat)+"\t"+str(sum(
 			# recall_by_classes[len(recall_by_classes)-1])/ncat))
 			benchStr = bookfile + "\t" + str() + "\t" + str(
@@ -1259,7 +1263,7 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 			# benchStr = benchStr+"\n--> Averages: "+str(sum(ps)/len(ps))+" / "+str(sum(rs)/len(rs))
 			print(benchStr)
 
-		if (api):
+		if api:
 			print(json.dumps(jsonOut))
 
 
@@ -1316,14 +1320,14 @@ for o, a in opts:
 	else:
 		assert False, "unhandled option"
 
-if (dobenchmark):
+if dobenchmark:
 	with codecs.open(bookfile[:-4] + '.corr', 'r', 'utf8') as f:
 		for i, raw_line in enumerate(f):
 			line = raw_line.strip().split(u"\t")
-			if (len(line) > 2):
+			if len(line) > 2:
 				if int(line[2]) >= WORD_FREQUENCE_THRESHOLD:
 					benchmark[line[0]] = (line[1] if line[1] in ['character', 'place'] else 'other')
-			elif (len(line) > 1):
+			elif len(line) > 1:
 				benchmark[line[0]] = (line[1] if line[1] in ['character', 'place'] else 'other')
 			else:
 				print('Benchmark file error: line ' + str(i) + ' ignored.')
