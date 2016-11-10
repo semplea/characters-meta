@@ -1,7 +1,5 @@
 #compilation de mots liés à des personnages, selon synonymo.fr
-#--------------------------------
-#relations
-#-----------------------------------------------------------------------
+#relations --------------------------------
 adolescente
 agréé
 aimée

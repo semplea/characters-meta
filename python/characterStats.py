@@ -18,11 +18,13 @@ import pickle
 import re
 import sys
 import warnings
-
 import matplotlib.pyplot as plt
 import numpy as np
-
+import imp
 import mwclient
+from compute_meta import run_meta
+from nltk.internals import find_binary, find_file
+
 
 if sys.version_info < (3, 0):
 	reload(sys)
@@ -34,7 +36,7 @@ os.environ["TREETAGGER_HOME"] = "/home/alexis/Documents/EPFL/MS3/Project/python/
 
 
 def getScriptPath():
-	return "/home/alexis/Documents/EPFL/MS3/Project/python/"
+	return "/home/alexis/Documents/EPFL/MS3/Project/python"
 
 sys.path.append(getScriptPath() + '/treetagger-python')
 from treetagger3 import TreeTagger
@@ -92,6 +94,13 @@ hunspellstemmer = hunspell.HunSpell(
 
 
 def stem(word):
+	"""
+	Computes a possible word for a given stem
+	:param word: string
+		The word to be stemmed
+	:return: string
+		The last possible stem in list, or the word itself if no stem found
+	"""
 	wstem = hunspellstemmer.stem(word)
 	if len(wstem) > 0:  # and wstem[-1] not in stopwords
 		return unicode(wstem[-1], 'utf8')
@@ -100,6 +109,7 @@ def stem(word):
 
 
 def storeCount(array, key):
+
 	if key in array:
 		array[key] += 1
 	else:
@@ -129,6 +139,14 @@ def keyForMaxValue(_dict):
 
 
 def sortUsingList(tosort, reflist):
+	"""
+	Sorts tosort by order of reflist.
+	Example: tosort: ['a', 'b', 'c'], reflist: [1, 3, 2]
+	Return: ['a', 'c', 'b']
+	:param tosort:
+	:param reflist:
+	:return:
+	"""
 	return [x for (y, x) in sorted(zip(reflist, tosort))]
 
 
@@ -264,6 +282,14 @@ for root, dirs, files in os.walk(getScriptPath() + "/classifiersdata/proximitywo
 
 
 def obviousPredictor(word, indexesOfSentencesContainingWord, sentences, debug=False):
+	"""
+
+	:param word:
+	:param indexesOfSentencesContainingWord:
+	:param sentences:
+	:param debug:
+	:return:
+	"""
 	if debug:
 		print("***** Obvious results for " + word + " *****")
 	scores = {}
@@ -463,33 +489,6 @@ def structuralPredictor(word, indexesOfSentencesContainingWord, sentences, debug
 	return [maxK, maxV / scoresSum if scoresSum > 0 else 0]
 
 
-# BOT 6 ################################################################################################################
-'''
-def returnNamesFromSynsets(synsets_list):
-	names = []
-	for h in synsets_list:
-		lemmas = h.lemmas()
-		for l in lemmas:
-			names.append(l.name())
-	return names
-
-def allHypernyms(synsets_list):
-	hypernyms = []
-	for synset in synsets_list:
-		synset_hypernyms = synset.hypernyms()
-		hypernyms = hypernyms+returnNamesFromSynsets(synset_hypernyms)
-		subs = allHypernyms(synset_hypernyms)
-		for h in subs:
-			hypernyms = hypernyms+returnNamesFromSynsets(synset.hypernyms())
-	return hypernyms
-
-def verbIsAboutSpeech(w):
-	vstemmed = stem(w)
-	hypernyms = allHypernyms(wn.synsets(vstemmed, lang='fra', pos=wn.VERB))
-	return ('verbalise' in hypernyms or 'communicate' in hypernyms or 'breathe' in hypernyms)		# Glass & Bangay
-'''
-
-
 def getQuotesPredictorThreshold(words, wsent, sentences, debug):
 	speakMentionsRatios = []
 	for w in words:
@@ -526,45 +525,8 @@ def quotesPredictor(word, indexesOfSentencesContainingWord, sentences, quotesPre
 	else:
 		return ["place", 0.9]
 
-
-'''
-	#Variant 1
-	if (debug):
-		print("***** Quotes results for "+word+" *****")
-	distances = []
-	quotesCount = 0
-	for index in indexesOfSentencesContainingWord:
-		sentenceprev = sentences[index-1] if (index>0) else sentences[index]
-		sentencenext = sentences[index+1] if (index<len(sentences)-1) else sentences[len(sentences)]
-		sentence = sentences[index]
-		if ("PUN:cit" in sentence["tags"]):
-			# We look for citations openings AFTER the word
-			# (since we may not have the citation end mark in the case of "--" notations)
-			diff = sentence["tags"].index("PUN:cit") - sentence["words"].index(word)
-			if (diff>0):
-				for wIdx, w in enumerate(sentence["tags"]):
-					if ("VER" in w and verbIsAboutSpeech(sentence["words"][wIdx])):
-						print sentence["words"][wIdx]+" :: "+str(0)
-						# wnapp.get_relations_data(word, verb_synsets[0]) quotesCount = quotesCount+1
-				distances.append(diff)
-		if ("PUN:cit" in sentenceprev["tags"] or "PUN:cit" in sentencenext["tags"]):
-			quotesCount = quotesCount+1
-			# diff = sentenceprev["tags"].index("PUN:cit") - sentence["words"].index(word)
-	if (debug):
-		print("Quotes="+str(quotesCount)+",\t"+str(distances));
-	if (quotesCount>0):
-		score = sum(distances)/quotesCount
-		return ["character", score]
-		if (score>=0.01):
-			return ["character", score]
-		else:
-			return ["place", 1-(score*10)]
-	else:
-		return ["place", 0.9]
-'''
-
-
 ########################################################################################################################
+
 
 def tokenizeAndStructure(text):
 	taggedText = tt.tag(text)
@@ -731,6 +693,14 @@ def sortbydescwordlengths(a, b):
 
 
 def joinCompoundNouns(fulltext, ucwords):
+	"""
+	Joins all occurrences of compound uppercase words in fulltext.
+	:param fulltext:
+		Text in which to replace occurrences
+	:param ucwords:
+		dict of words and frequencies
+	:return:
+	"""
 	allucwords = copy.deepcopy(ucwords.keys())
 	allucwords.sort(sortbydescwordlengths)
 	for w in allucwords:
@@ -765,9 +735,6 @@ def confirmProperNoun(word, wmedianidx, wsentences, ucwords):
 	wordTags = []
 	for s in wsentences:
 		wordTags.append(s['tags'][s['words'].index(word)])
-	# for i, w in enumerate(s['words']):
-	# 	if w == word:
-	# 		wordTags.append(s['tags'][i])
 	if not ('NAM' in wordTags or 'NOM' in wordTags):
 		if debug:
 			print("Word ignored: " + word + "  [tagged " + str(wordTags) + "]")
@@ -800,11 +767,6 @@ def removeFalsePositives(sentences, wmedianidx, wprev, wnext, wsent, ucwords):
 			del wprev[word]
 			del wnext[word]
 			del wsent[word]
-		# else:
-		# 	preditions = [positionPredictor(word, wsent[word], sentences, debug),
-		#   localProximityPredictor(word, proxWords, debug), onlineDisambiguation(mwsite, word, word, debug)]
-		# 	best = bestChoice(preditions)
-		# 	print(best[0]+"\t"+str(best[1]))
 
 
 def getNounsSurroundings(sentences, ucwords, fulltext):
@@ -826,8 +788,6 @@ def getNounsSurroundings(sentences, ucwords, fulltext):
 			if wpos > -1:
 				wsent[word].append(sentIdx)
 				wPositions.append(wpos)
-				#  update the mean position value (cumulative recompute)
-				# wmeanidx[word] = (wmeanidx[word]*(i/(i+1.0)))+(float(wpos)/(i+1.0))
 				if wpos > 0:
 					storeCount(wprev[word], stem(sent["nostop"][wpos - 1]))
 				if wpos < len(sent["nostop"]) - 1:
@@ -855,36 +815,22 @@ def removeBelowThreshold(sentences, wmeanidx, wprev, wnext, wsent, ucwords):
 			del wmeanidx[word]
 
 
-'''
-def get_stats(text, ucwords):
-	words = nltk.word_tokenize(text)
-	i = 0
-	ci = len(words)-2
-	while i<ci:
-		if (words[i] in ucwords and words[i+1]=='de' and words[i+2] in ucwords):
-			storeCount(_names, words[i]+' '+words[i+1]+' '+words[i+2])
-			del words[i:i+3]
-			ci=ci-3
-		else:
-			i=i+1
-	i = 0
-	ci = len(words)-1
-	while i<ci:
-		if (words[i] in ucwords and words[i+1] in ucwords):
-			storeCount(_names, words[i]+' '+words[i+1])
-			del words[i:i+2]
-			ci=ci-2
-		else:
-			i=i+1
-	for w in words:
-		if (w in ucwords):
-			storeCount(_names, w)
-'''
-
-
 ########################################################################################################################
 
-def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, graphs=False):
+def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, graphs=False, meta=False):
+	"""
+	Main processing function for a bookfile
+	:param bookfile: string
+		Path to a file containing the book text
+	:param mwsite: boolean
+	:param focus: string
+	:param benchmark: dict(string):string
+		Read from .corr file. Key is UC entity. Value is 'character' or 'place'
+	:param debug: boolean
+	:param verbose: boolean
+	:param graphs: boolean
+	:return:
+	"""
 	jsonOut = {}
 	ucwords = {}
 	sentences = []
@@ -958,24 +904,6 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 				exit()
 			if debug:
 				print('-----------------------------------')
-		# Tweak weights according to allpredictions results.
-		# For instance, remove predictors whose % deviate too much from the others
-		# charsPlacesRatio = []
-		# predictorRatioCounts = []
-		#
-		# for pIdx in range(0,len(weights)):
-		#   charsPlacesRatio.append((len([1 for wp in allpredictions if allpredictions[wp][pIdx][0]=='character']))/(
-		#       len([1 for wp in allpredictions if allpredictions[wp][pIdx][0]=='place'])+1))
-		# median = np.median(np.array(charsPlacesRatio))
-		# MAD = np.median([abs(r - median) for r in charsPlacesRatio])
-		# for rIdx, r in enumerate(charsPlacesRatio):
-		# 	if (debug):
-		# 		print(str(rIdx)+":"+str(r))
-		# 	if (abs(r - median) > 1.4826*MAD):
-		# 		weights[rIdx] = 0
-		# 		pass
-		# if (debug):
-		# 	print('Adjusted predictors weights: '+str(weights))
 
 		if saveResults:
 			with codecs.open(getScriptPath() + u"/cache/results-" + bookfile.split(u"/")[-1], 'wb', 'utf8') as f:
@@ -1005,11 +933,6 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 					print(word + "\t" + best[0] + "\t" + str(best[1]) + "\t" + str(wcount))
 			if debug:
 				print('===================================')
-			# if wcount>(ucwtotcount/500):
-			# 	print("OK: \t"+word+"\t"+str(meanidx)+"\t"+str(ucwords[word])+"\t"+
-			#   localProximityPredictor(word, proxWords)+"\ts="+"\t"+','.join(proxWords))
-			# elif debug:
-			# 	print(word+"\t"+"(ignored, "+str(wcount)+"/"+str(ucwtotcount)+")")
 		if len(benchmark) > 0:
 			if verbose:
 				print('=== PERFORMANCE EVALUATION ==============================')
@@ -1068,7 +991,6 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 		for v in finalWordClasses['place']:
 			sortKeys.append(min(wsent[v]))
 		finalWordClasses['place'] = sortUsingList(finalWordClasses['place'], sortKeys)
-
 		if api:
 			jsonOut['substitutions'] = compoundNouns
 			jsonOut['classes'] = finalWordClasses
@@ -1084,17 +1006,7 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 				if verbose:
 					print("========== BENCHMARK RESULTS ============")
 					print("Overall score: " + str(benchmarkValues["correct"] / benchmarkValues["found"]))
-				# for idx, b in enumerate([b for b in benchmarkValues["predictors"] if len(b)>0]):
-				# 	print("Prediction #"+str(idx+1)+": "+str( (sum(b)/len(b))))
 
-				# These are the colors that will be used in the plot
-				# color_sequence = ['#5EF1F2', '#00998F', '#E0FF66', '#740AFF', '#990000', '#FFFF80', '#FFFF00',
-				# '#FF5005', '#94FFB5', '#8F7C00', '#9DCC00', '#C20088', '#003380', '#FFA405', '#FFA8BB', '#426600',
-				# '#FF0010', '#F0A3FF', '#0075DC', '#993F00', '#4C005C', '#191919', '#005C31', '#2BCE48', '#FFCC99',
-				# '#808080']
-				# color_sequence = ['#1f77b4', '#ff7f0e', '#ffbb78', '#2ca02c', '#98df8a', '#d62728', '#ff9896',
-				# '#9467bd', '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7', '#bcbd22',
-				# '#dbdb8d', '#17becf', '#9edae5']
 		color_sequence = [
 			"#000000", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059", "#FFDBE5", "#7A4900",
 			"#0000A6", "#63FFAC", "#B79762", "#004D43", "#8FB0FF", "#997D87", "#5A0007", "#809693", "#FEFFE6",
@@ -1169,15 +1081,6 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 							plt.plot(
 								xs_sorted, ys_sorted, 'o-', lw=2, color=color_sequence[w1idx % len(color_sequence)],
 								label=w1, markersize=8, markeredgewidth=0.0, alpha=0.7)
-					# x_linspace = np.linspace(min(xs_sorted), max(xs_sorted), num=100, endpoint=True)
-					# xs_sorted = np.array(xs_sorted)
-					# ys_sorted = np.array(ys_sorted)
-					# if (len(xs_sorted)>3):
-					# 	f2 = interp1d(xs_sorted, ys_sorted, kind='cubic')
-					# else:
-					# 	f2 = interp1d(xs_sorted, ys_sorted, kind='slinear')
-					# plt.plot(xs_sorted, ys_sorted, 'o', x_linspace, f2(x_linspace), '-', lw=2, color=color_sequence[
-					# w1idx % len(color_sequence)], label=w1, markersize=8, markeredgewidth=0.0, alpha=0.7)
 
 					ax = plt.subplot(111)
 					box = ax.get_position()
@@ -1266,13 +1169,16 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 		if api:
 			print(json.dumps(jsonOut))
 
+		if meta:
+			run_meta(finalWordClasses['character'])
+
 
 ########################################################################################################################
 
 try:
 	opts, args = getopt.getopt(
-		sys.argv[1:], "abcdfgsxw:v",
-		["help", "benchmark", "graphs", "api", "file=", "focus=", "save", "mwclient=", "mincount="])
+		sys.argv[1:], "abcdfgmsxw:v",
+		["help", "benchmark", "graphs", "api", "file=", "focus=", "save", "mwclient=", "mincount=", "meta"])
 except getopt.GetoptError as err:
 	# print help information and exit:
 	print(err)  # will print something like "option -a not recognized"
@@ -1288,6 +1194,7 @@ verbose = False
 graphs = False
 api = False  # API Mode, enable Web (full JSON) output
 saveResults = False
+meta = False
 for o, a in opts:
 	if o == "-d":
 		debug = True
@@ -1317,6 +1224,8 @@ for o, a in opts:
 		mwsite = mwclient.Site(mwclienturl)
 		mwsite.compress = False
 		readCachedResults(mwsite)
+	elif o in("-m", "--meta"):
+		meta = True
 	else:
 		assert False, "unhandled option"
 
@@ -1332,47 +1241,6 @@ if dobenchmark:
 			else:
 				print('Benchmark file error: line ' + str(i) + ' ignored.')
 
-processBook(bookfile, mwsite, focus, benchmark, debug, verbose, graphs)
+finalWordClasses = processBook(bookfile, mwsite, focus, benchmark, debug, verbose, graphs, meta)
 
-'''
-	fig, ax = plt.subplots(1, 1, figsize=(12, 8))
-	ax.get_xaxis().tick_bottom()
-	ax.get_yaxis().tick_left()
-	plt.xticks(range(0, len(sentences), int(round(len(sentences)/20))), fontsize=10)
-	plt.yticks(range(0, len(finalWordClasses['place']), 1), finalWordClasses['place'], fontsize=10)
-	for w1idx, w1 in enumerate(finalWordClasses['character']):
-		xs = []
-		ys = []
-		for w2idx, w2 in enumerate(finalWordClasses['place']):
-			intersect = list(set(wsent[w1]) & set(wsent[w2]))
-			for i in intersect:
-				xs.append(i)
-				ys.append(w2idx)
-		if (len(xs)>0):
-			xs_sorted, ys_sorted = zip(*sorted(zip(xs, ys), key=operator.itemgetter(0), reverse=True))
-			line, = plt.plot(xs_sorted, ys_sorted, 'o-', lw=1, color=color_sequence[w1idx % len(color_sequence)],
-				label=w1, markersize=10, markeredgewidth=0.0)
-	ax = plt.subplot(111)
-	box = ax.get_position()
-	ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-	plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize=10)
-	plt.show()
-'''
-
-'''
-	print("Found "+str(len(ucwords))+" names. Starting disambiguation...")
-	for i, chap in enumerate(chapters):
-		sys.stdout.write('%d' % i)
-		sys.stdout.flush()
-		sys.stdout.write('\r')
-		get_stats(chap, ucwords)
-	names_view = [ (v,k) for k,v in _names.iteritems() ]
-	names_view.sort(reverse=True)
-	countMax = -1
-	for key, value in names_view:
-		if (countMax==-1):
-			countMax = key
-		wikiClass = ""
-		if (key > countMax/10):
-			wikiClass = onlineDisambiguation(mwsite, value, value, debug)
-'''
+########################################################################################################################
