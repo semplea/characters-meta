@@ -1170,7 +1170,8 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 			print(json.dumps(jsonOut))
 
 		if meta:
-			run_meta(finalWordClasses['character'])
+			print("termination")
+			# run_meta(chapters, sentences, finalWordClasses['character'])
 
 
 ########################################################################################################################
@@ -1241,6 +1242,6 @@ if dobenchmark:
 			else:
 				print('Benchmark file error: line ' + str(i) + ' ignored.')
 
-finalWordClasses = processBook(bookfile, mwsite, focus, benchmark, debug, verbose, graphs, meta)
+processBook(bookfile, mwsite, focus, benchmark, debug, verbose, graphs, meta)
 
 ########################################################################################################################
