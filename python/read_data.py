@@ -1,6 +1,7 @@
 # coding: utf-8
 import re
 import unicodedata
+import codecs
 
 def remove_accents(in_str):
 	encoding = "utf-8"
@@ -18,8 +19,10 @@ def read_data():
 	"""
 	fname = "/home/alexis/Documents/EPFL/MS3/Project/python/classifiersdata/proximitywordclasses/character.txt"
 
-	with open(fname, 'r') as f:
-		content = f.readlines()
+	with codecs.open(fname, 'r', 'utf8') as f:
+		content = []
+		for line in f:
+			content.append(line[:-1]) # get rid of newlines
 
 	# Split into sublists with header line starting with # (hash-symbol)
 	acc = content[0]
