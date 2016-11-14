@@ -2,12 +2,21 @@
 # !/usr/bin/env python
 
 import hunspell
+from math import log
 
 def getScriptPath():
 	return "/home/alexis/Documents/EPFL/MS3/Project/python"
 
+def getIdxOfWord(ws, w):
+	"""Return index of word in sentence"""
+	try:
+		wIdx = ws.index(w)
+	except:
+		wIdx = -1
+	return wIdx
 
-def stem(word):
+
+def stem(stemmer, word):
 	"""
 	Computes a possible stem for a given word
 	:param word: string
@@ -15,9 +24,7 @@ def stem(word):
 	:return: string
 		The last possible stem in list, or the word itself if no stem found
 	"""
-	hunspellstemmer = hunspell.HunSpell(getScriptPath() + '/dictionaries/fr-toutesvariantes.dic', getScriptPath() + '/dictionaries/fr-toutesvariantes.aff')
-
-	wstem = hunspellstemmer.stem(word)
+	wstem = stemmer.stem(word)
 	if len(wstem) > 0:  # and wstem[-1] not in stopwords
 		return unicode(wstem[-1], 'utf8')
 	else:
@@ -25,11 +32,22 @@ def stem(word):
 
 
 def storeCount(array, key):
-
+	"""Increments value for key in store by one, or sets to 1 if key nonexistent."""
 	if key in array:
 		array[key] += 1
 	else:
 		array[key] = 1
+
+
+def store_increment(array, key, incr):
+	"""
+	Increment value for key in store by given increment.
+	:param incr: float
+	"""
+	if key in array:
+		array[key] += incr
+	else:
+		array[key] = incr
 
 
 def idxForMaxKeyValPair(array):
@@ -64,3 +82,10 @@ def sortUsingList(tosort, reflist):
 	:return:
 	"""
 	return [x for (y, x) in sorted(zip(reflist, tosort))]
+
+def sortntop_byval(tosort, top, descending=False):
+    """
+    Sort dictionary by descending values and return top elements.
+	Return list of tuples.
+    """
+    return sorted([(k, v) for k, v in tosort.items()], key=lambda x: x[1], reverse=descending)[:top]

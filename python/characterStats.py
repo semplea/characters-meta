@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import imp
 import mwclient
+import hunspell
 from compute_meta import run_meta
 from tools import *
 from nltk.internals import find_binary, find_file
@@ -35,6 +36,7 @@ warnings.simplefilter("error")
 
 os.environ["TREETAGGER_HOME"] = "/home/alexis/Documents/EPFL/MS3/Project/python/TreeTagger/cmd"
 
+hunspellstemmer = hunspell.HunSpell(getScriptPath() + '/dictionaries/fr-toutesvariantes.dic', getScriptPath() + '/dictionaries/fr-toutesvariantes.aff')
 
 def getScriptPath():
 	return "/home/alexis/Documents/EPFL/MS3/Project/python"
@@ -743,14 +745,6 @@ def confirmProperNoun(word, wmedianidx, wsentences, ucwords):
 	return True
 
 
-def getIdxOfWord(ws, w):
-	try:
-		wIdx = ws.index(w)
-	except:
-		wIdx = -1
-	return wIdx
-
-
 def removeFalsePositives(sentences, wmedianidx, wprev, wnext, wsent, ucwords):
 	for word, medianidx in wmedianidx.iteritems():
 		proxWords = {}
@@ -790,9 +784,9 @@ def getNounsSurroundings(sentences, ucwords, fulltext):
 				wsent[word].append(sentIdx)
 				wPositions.append(wpos)
 				if wpos > 0:
-					storeCount(wprev[word], stem(sent["nostop"][wpos - 1]))
+					storeCount(wprev[word], stem(hunspellstemmer, sent["nostop"][wpos - 1]))
 				if wpos < len(sent["nostop"]) - 1:
-					storeCount(wnext[word], stem(sent["nostop"][wpos + 1]))
+					storeCount(wnext[word], stem(hunspellstemmer, sent["nostop"][wpos + 1]))
 				i += 1.0
 		if len(wPositions) > 0:
 			wmeanidx[word] = np.mean(np.array(wPositions))
