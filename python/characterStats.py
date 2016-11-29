@@ -562,6 +562,7 @@ def tokenizeAndStructure(text):
 ########################################################################################################################
 
 def bestChoice(_predictions, weights=[], debug=False):
+
 	predictions = copy.deepcopy(_predictions)
 	if len(weights) == 0:
 		weights = [1 for p in predictions]
@@ -1228,9 +1229,11 @@ if dobenchmark:
 		for i, raw_line in enumerate(f):
 			line = raw_line.strip().split(u"\t")
 			if len(line) > 2:
+				# Line has name, type, count
 				if int(line[2]) >= WORD_FREQUENCE_THRESHOLD:
 					benchmark[line[0]] = (line[1] if line[1] in ['character', 'place'] else 'other')
 			elif len(line) > 1:
+				# Line has name, type
 				benchmark[line[0]] = (line[1] if line[1] in ['character', 'place'] else 'other')
 			else:
 				print('Benchmark file error: line ' + str(i) + ' ignored.')

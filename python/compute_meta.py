@@ -39,6 +39,12 @@ def job_coocurrence(sentences, char_name, job_list):
     """
     count_score = {}
     proximity_score = {}
+    # Check in previous and next sentences as well
+    # TODO Go by index in sents instead
+    # for i = 0 prev_sent is List() and same for end of sentences
+    # TODO generalise to sentences +-i context
+    # take neighbor to the left and right to create sliding window of sentences
+    window_size = 3
     n = len(sentences)
     for i, sent in enumerate(sentences):
         sent_nostop = sent['nostop']
@@ -58,7 +64,7 @@ def job_coocurrence(sentences, char_name, job_list):
                     matched += 1
                 # divide by total matches to get mean proximity measure
                 if matched:
-                    proximity_score[job] /= float(matched) # TODO PROPABLY NOT OK TO GET FLOAT RESULT
+                    proximity_score[job] = float(proximity_score[job]) / float(matched)
 
     return count_score, proximity_score
 
