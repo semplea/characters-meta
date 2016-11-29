@@ -22,7 +22,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import imp
 import mwclient
+import hunspell
 from compute_meta import run_meta
+from tools import *
 from nltk.internals import find_binary, find_file
 
 
@@ -34,6 +36,7 @@ warnings.simplefilter("error")
 
 os.environ["TREETAGGER_HOME"] = "/home/alexis/Documents/EPFL/MS3/Project/python/TreeTagger/cmd"
 
+hunspellstemmer = hunspell.HunSpell(getScriptPath() + '/dictionaries/fr-toutesvariantes.dic', getScriptPath() + '/dictionaries/fr-toutesvariantes.aff')
 
 def getScriptPath():
 	return "/home/alexis/Documents/EPFL/MS3/Project/python"
@@ -89,65 +92,65 @@ _names = {}
 _tagnums = []
 compoundNouns = {}
 
-hunspellstemmer = hunspell.HunSpell(
-	getScriptPath() + '/dictionaries/fr-toutesvariantes.dic', getScriptPath() + '/dictionaries/fr-toutesvariantes.aff')
-
-
-def stem(word):
-	"""
-	Computes a possible word for a given stem
-	:param word: string
-		The word to be stemmed
-	:return: string
-		The last possible stem in list, or the word itself if no stem found
-	"""
-	wstem = hunspellstemmer.stem(word)
-	if len(wstem) > 0:  # and wstem[-1] not in stopwords
-		return unicode(wstem[-1], 'utf8')
-	else:
-		return word
-
-
-def storeCount(array, key):
-
-	if key in array:
-		array[key] += 1
-	else:
-		array[key] = 1
-
-
-def idxForMaxKeyValPair(array):
-	maxV = array[0][1]
-	i = 0
-	maxVIdx = 0
-	for k, v in array:
-		if v > maxV:
-			maxV = v
-			maxVIdx = i
-		i += 1
-	return maxVIdx
-
-
-def keyForMaxValue(_dict):
-	maxK = ''
-	maxV = 0
-	for k, v in _dict.iteritems():
-		if v > maxV:
-			maxV = v
-			maxK = k
-	return maxK
-
-
-def sortUsingList(tosort, reflist):
-	"""
-	Sorts tosort by order of reflist.
-	Example: tosort: ['a', 'b', 'c'], reflist: [1, 3, 2]
-	Return: ['a', 'c', 'b']
-	:param tosort:
-	:param reflist:
-	:return:
-	"""
-	return [x for (y, x) in sorted(zip(reflist, tosort))]
+# hunspellstemmer = hunspell.HunSpell(
+# 	getScriptPath() + '/dictionaries/fr-toutesvariantes.dic', getScriptPath() + '/dictionaries/fr-toutesvariantes.aff')
+#
+#
+# def stem(word):
+# 	"""
+# 	Computes a possible stem for a given word
+# 	:param word: string
+# 		The word to be stemmed
+# 	:return: string
+# 		The last possible stem in list, or the word itself if no stem found
+# 	"""
+# 	wstem = hunspellstemmer.stem(word)
+# 	if len(wstem) > 0:  # and wstem[-1] not in stopwords
+# 		return unicode(wstem[-1], 'utf8')
+# 	else:
+# 		return word
+#
+#
+# def storeCount(array, key):
+#
+# 	if key in array:
+# 		array[key] += 1
+# 	else:
+# 		array[key] = 1
+#
+#
+# def idxForMaxKeyValPair(array):
+# 	maxV = array[0][1]
+# 	i = 0
+# 	maxVIdx = 0
+# 	for k, v in array:
+# 		if v > maxV:
+# 			maxV = v
+# 			maxVIdx = i
+# 		i += 1
+# 	return maxVIdx
+#
+#
+# def keyForMaxValue(_dict):
+# 	maxK = ''
+# 	maxV = 0
+# 	for k, v in _dict.iteritems():
+# 		if v > maxV:
+# 			maxV = v
+# 			maxK = k
+# 	return maxK
+#
+#
+# def sortUsingList(tosort, reflist):
+# 	"""
+# 	Sorts tosort by order of reflist.
+# 	Example: tosort: ['a', 'b', 'c'], reflist: [1, 3, 2]
+# 	Return: ['a', 'c', 'b']
+# 	:param tosort:
+# 	:param reflist:
+# 	:return:
+# 	"""
+# 	return [x for (y, x) in sorted(zip(reflist, tosort))]
 
 
 # BOT 5 ################################################################################################################
@@ -559,6 +562,7 @@ def tokenizeAndStructure(text):
 ########################################################################################################################
 
 def bestChoice(_predictions, weights=[], debug=False):
+
 	predictions = copy.deepcopy(_predictions)
 	if len(weights) == 0:
 		weights = [1 for p in predictions]
@@ -742,14 +746,6 @@ def confirmProperNoun(word, wmedianidx, wsentences, ucwords):
 	return True
 
 
-def getIdxOfWord(ws, w):
-	try:
-		wIdx = ws.index(w)
-	except:
-		wIdx = -1
-	return wIdx
-
-
 def removeFalsePositives(sentences, wmedianidx, wprev, wnext, wsent, ucwords):
 	for word, medianidx in wmedianidx.iteritems():
 		proxWords = {}
@@ -789,9 +785,9 @@ def getNounsSurroundings(sentences, ucwords, fulltext):
 				wsent[word].append(sentIdx)
 				wPositions.append(wpos)
 				if wpos > 0:
-					storeCount(wprev[word], stem(sent["nostop"][wpos - 1]))
+					storeCount(wprev[word], stem(hunspellstemmer, sent["nostop"][wpos - 1]))
 				if wpos < len(sent["nostop"]) - 1:
-					storeCount(wnext[word], stem(sent["nostop"][wpos + 1]))
+					storeCount(wnext[word], stem(hunspellstemmer, sent["nostop"][wpos + 1]))
 				i += 1.0
 		if len(wPositions) > 0:
 			wmeanidx[word] = np.mean(np.array(wPositions))
@@ -908,7 +904,6 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 		if saveResults:
 			with codecs.open(getScriptPath() + u"/cache/results-" + bookfile.split(u"/")[-1], 'wb', 'utf8') as f:
 				pickle.dump(allpredictions, f)
-
 		for word, wcount in sorted_ucw:
 			if debug: print(word)
 			best = bestChoice(allpredictions[word], weights, debug)
@@ -1170,7 +1165,7 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 			print(json.dumps(jsonOut))
 
 		if meta:
-			run_meta(finalWordClasses['character'])
+			run_meta(sentences, finalWordClasses['character'])
 
 
 ########################################################################################################################
@@ -1234,13 +1229,15 @@ if dobenchmark:
 		for i, raw_line in enumerate(f):
 			line = raw_line.strip().split(u"\t")
 			if len(line) > 2:
+				# Line has name, type, count
 				if int(line[2]) >= WORD_FREQUENCE_THRESHOLD:
 					benchmark[line[0]] = (line[1] if line[1] in ['character', 'place'] else 'other')
 			elif len(line) > 1:
+				# Line has name, type
 				benchmark[line[0]] = (line[1] if line[1] in ['character', 'place'] else 'other')
 			else:
 				print('Benchmark file error: line ' + str(i) + ' ignored.')
 
-finalWordClasses = processBook(bookfile, mwsite, focus, benchmark, debug, verbose, graphs, meta)
+processBook(bookfile, mwsite, focus, benchmark, debug, verbose, graphs, meta)
 
 ########################################################################################################################
