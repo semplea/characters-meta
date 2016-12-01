@@ -100,3 +100,4 @@ frWac_postag_no_phrase_700_skip_cut50.bin
 
 # Ignore php
 php/
+char-output
