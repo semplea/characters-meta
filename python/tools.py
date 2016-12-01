@@ -31,6 +31,7 @@ def stem(stemmer, word):
 		return word
 
 
+
 def storeCount(array, key):
 	"""Increments value for key in store by one, or sets to 1 if key nonexistent."""
 	if key in array:
@@ -89,3 +90,16 @@ def sortntop_byval(tosort, top, descending=False):
 	Return list of tuples.
     """
     return sorted([(k, v) for k, v in tosort.items()], key=lambda x: x[1], reverse=descending)[:top]
+
+def build_sents_by_char(chars, sents):
+	"""
+	Build map of chars to list of indices where characters occur in sents.
+	"""
+	print("Building character occurrence map")
+	print(chars)
+	char_sent_map = dict.fromkeys(chars, list())
+	for ix, sent in enumerate(sents):
+		for char, ix_lst in char_sent_map.iteritems():
+			if char in sent['nostop']:
+				ix_lst.append(ix)
+	return char_sent_map

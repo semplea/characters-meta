@@ -2284,6 +2284,7 @@ brandevinière
 brandevinier
 brasseur
 brasseuse
+brigadier
 brillanteur
 briqueteur
 briquetier
@@ -2399,7 +2400,6 @@ cartier
 cartographe
 cartonnier
 cartonnière
-cartons
 cartooniste
 cascadeur
 cascadeuse
@@ -2537,6 +2537,7 @@ coiffeur
 coiffeuse
 colleur
 colleuse
+colonel
 coloriste
 colporteur
 coltineur
@@ -2752,7 +2753,7 @@ détacheur
 detacheuse
 détaillant
 détaillante
-detective
+détective
 développeur
 développeuse
 devideur
@@ -3111,6 +3112,7 @@ gemmeuse
 gemmologue
 gendarme
 généalogiste
+général
 généraliste
 généticienne
 généticien
@@ -3318,7 +3320,7 @@ jurat
 juré
 juriste
 kinesiste
-kinésithérapeute  
+kinésithérapeute
 kiosquière
 kiosquier
 laborantin
@@ -4525,7 +4527,7 @@ webmarketeur
 webmarketeuse
 webmaster
 webmestre
-webplaner	
+webplaner
 zingueur
 zoologiste
 zoologue

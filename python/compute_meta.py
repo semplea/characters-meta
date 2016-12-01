@@ -21,8 +21,10 @@ def run_meta(sentences, char_list):
     job_list = classifier_data_dict['metiers']
     full_count_score = {}
     full_proximity_score = {}
-    for character in char_list[0:10]:
+    sents_by_char = build_sents_by_char(char_list, sentences)
+    for character in char_list:
         # scores per character
+        # TODO
         count_score, proximity_score = job_coocurrence(sentences, character, job_list)
         full_count_score[character] = sortntop_byval(count_score, TOP_N_JOBS, True)
         full_proximity_score[character] = sortntop_byval(proximity_score, TOP_N_JOBS)
@@ -30,6 +32,7 @@ def run_meta(sentences, char_list):
     print_score(full_count_score)
     print('===========PROXIMITY SCORE=============')
     print_score(full_proximity_score)
+
 
 
 def job_coocurrence(sentences, char_name, job_list):
@@ -71,3 +74,7 @@ def job_coocurrence(sentences, char_name, job_list):
 def print_score(store):
     for k, v in store.items():
         print(k, v)
+
+# Load model
+# model = Word2Vec.load_word2vec_format('frWac_postag_no_phrase_700_skip_cut50.bin', binary=True)
+# model.similarity('femme_n', 'homme_n')

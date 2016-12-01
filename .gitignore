@@ -94,3 +94,9 @@ ENV/
 
 # Papers
 Papers/
+
+# Built model for word2vec
+frWac_postag_no_phrase_700_skip_cut50.bin
+
+# Ignore php
+php/
