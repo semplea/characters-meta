@@ -95,8 +95,6 @@ def build_sents_by_char(chars, sents):
 	"""
 	Build map of chars to list of indices where characters occur in sents.
 	"""
-	print("Building character occurrence map")
-	print(chars)
 	char_sent_map = dict.fromkeys(chars, list())
 	for ix, sent in enumerate(sents):
 		for char, ix_lst in char_sent_map.iteritems():

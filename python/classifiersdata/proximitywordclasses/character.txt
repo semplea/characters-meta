@@ -2105,6 +2105,7 @@ arrimeur
 arrondisseur
 arroseur
 arroseuse
+artisan
 artificier
 artilleur
 assainisseur
