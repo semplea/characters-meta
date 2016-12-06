@@ -2,6 +2,7 @@
 from read_data import read_data
 from tools import *
 from math import log
+# from gensim.models import Word2Vec
 
 
 def run_meta(sentences, char_list):

@@ -2672,6 +2672,7 @@ criminologue
 crinier
 cristallière
 crocheteur
+croque-mort
 croupier
 croupière
 cryptographe
@@ -3285,6 +3286,7 @@ infographiste
 informaticien
 ingénieriste
 ingénieur
+inquisiteur
 inséminateur
 inspecteur
 inspectrice
@@ -3439,6 +3441,7 @@ magnétiseuse
 maieure
 maieur
 maieuticien
+maire
 maître
 maîtresse
 malletière
@@ -3572,6 +3575,7 @@ modélisateur
 modélisatrice
 modéliste
 modiste
+moine
 moireur
 moireuse
 moissonneur
@@ -4201,6 +4205,7 @@ secrétaire
 sellier
 semeur
 semeuse
+sénateur
 séranceur
 séranceuse
 serriste
@@ -4269,7 +4274,6 @@ stucateur
 stylicien
 stylicienne
 styliste
-sujet
 superviseur
 surveillant
 surveillante
@@ -4333,6 +4337,7 @@ tendeur
 tendeuse
 tennisman
 tenniswoman
+ténor
 terminologue
 terrassier
 testeur
