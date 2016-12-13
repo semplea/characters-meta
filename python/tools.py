@@ -40,7 +40,7 @@ def storeCount(array, key):
 		array[key] = 1
 
 
-def store_increment(array, key, incr):
+def storeIncrement(array, key, incr):
 	"""
 	Increment value for key in store by given increment.
 	:param incr: float
@@ -84,14 +84,14 @@ def sortUsingList(tosort, reflist):
 	"""
 	return [x for (y, x) in sorted(zip(reflist, tosort))]
 
-def sortntop_byval(tosort, top, descending=False):
+def sortNTopByVal(tosort, top, descending=False):
     """
     Sort dictionary by descending values and return top elements.
 	Return list of tuples.
     """
     return sorted([(k, v) for k, v in tosort.items()], key=lambda x: x[1], reverse=descending)[:top]
 
-def build_sents_by_char(chars, sents):
+def buildSentsByChar(chars, sents):
 	"""
 	Build map of chars to list of indices where characters occur in sents.
 	"""
