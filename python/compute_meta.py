@@ -1,9 +1,9 @@
 # coding: utf-8
-from read_data import read_data
+from read_data import readData
 from tools import *
 from math import log
-from gensim.models import Word2Vec
 from collections import defaultdict
+from word_similarity import MyModel
 
 
 def runMeta(sentences, char_list, job_labels):
@@ -19,21 +19,42 @@ def runMeta(sentences, char_list, job_labels):
     """
     TOP_N_JOBS = 10
     char_list = list(reversed(char_list))
-    classifier_data_dict = read_data()
+    classifier_data_dict = readData()
     job_list = classifier_data_dict['metiers']
     full_count_score = {}
     full_proximity_score = {}
     sents_by_char = buildSentsByChar(char_list, sentences)
-    for character in char_list[:2]:
+    word2vec_model = MyModel()
+    N_CHARS = 2
+    similarity_scores = dict.fromkeys(char_list[:N_CHARS], [])
+
+    for character in char_list[:N_CHARS]:
         # scores per character
         # TODO
         count_score, proximity_score = jobPredictor(sentences, character, job_list)
         full_count_score[character] = sortNTopByVal(count_score, TOP_N_JOBS, True)
         full_proximity_score[character] = sortNTopByVal(proximity_score, TOP_N_JOBS)
+        # Choose best predictions for meta benchmark
+        top_preds = [full_count_score[character][0], full_proximity_score[character][0]]
+        # Generate vector similarities
+        print(job_labels[character])
+        for label in job_labels[character]:
+            for top in top_preds:
+                similarity_scores[character].append(
+                word2vec_model.compareWords(top[0], label))
+
+
+    print("")
     print('===========COUNT SCORE=============')
     printScore(full_count_score)
+    print("")
     print('===========PROXIMITY SCORE=============')
     printScore(full_proximity_score)
+    print("")
+    print('===========SIMILARITY SCORE=============')
+    print(similarity_scores)
+
+    # Computing job suggestion similarity with labels
 
 
 def jobPredictor(sentences, char_name, job_list, job_labels=defaultdict(int)):

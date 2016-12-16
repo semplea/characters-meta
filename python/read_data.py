@@ -3,7 +3,7 @@ import re
 import unicodedata
 import codecs
 
-def remove_accents(in_str):
+def removeAccents(in_str):
 	encoding = "utf-8"
 	u_str = in_str.decode(encoding)
 	temp = unicodedata.normalize('NFKD', u_str)
@@ -11,7 +11,7 @@ def remove_accents(in_str):
 	return norm_str
 
 
-def read_data():
+def readData():
 	"""Read data and create sublists everytime a line starts with #
 	Return dict with category -> list(words).
 	Keys of dictionary returned are 'tromper', 'nutrition', 'dormir', 'raison', 'tuer', 'metiers', 'vouloir', 'pensee',
@@ -39,7 +39,7 @@ def read_data():
 	rx = re.compile("[\w]+", re.UNICODE)
 	for lst in categories[1:]:
 		str_name = lst[0]
-		str_name = remove_accents(str_name)
+		str_name = removeAccents(str_name)
 		cat_name = rx.findall(str_name)[0]
 		cats_dict[cat_name] = lst[1:]
 	return cats_dict

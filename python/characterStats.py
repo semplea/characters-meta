@@ -1188,7 +1188,7 @@ elif meta:
 		for i, raw_line in enumerate(f):
 			line = raw_line.strip().split(u"\t")
 			if len(line) > 3 and line[1] == 'character':
-				job_labels[line[0]] = line[3]
+				job_labels[line[0]] = re.findall(r'\w+', unicode(line[3]), re.UNICODE)
 
 processBook(bookfile, mwsite, focus, benchmark, debug, verbose, graphs, meta)
 
