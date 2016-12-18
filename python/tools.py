@@ -2,7 +2,10 @@
 # !/usr/bin/env python
 
 import hunspell
+import pandas as pd
 from math import log
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def getScriptPath():
 	return "/home/alexis/Documents/EPFL/MS3/Project/python"
@@ -101,3 +104,11 @@ def buildSentsByChar(chars, sents):
 			if char in sent['nostop']:
 				ix_lst.append(ix)
 	return char_sent_map
+
+def plotJobScores(similarity_scores):
+	"""
+	Create plot of job score results
+	"""
+	palette = sns.color_palette()
+	ax = sns.swarmplot(x='Character', y='Similarity', data=similarity_scores, hue='Predictor', palette={'Count': palette[0], 'Proximity': palette[2]})
+	plt.show()
