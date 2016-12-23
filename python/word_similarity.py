@@ -25,3 +25,4 @@ class MyModel:
 
 
 # visualize with t-SNE http://homepage.tudelft.nl/19j49/t-SNE.html?
+# model['computer'] gives raw numpy vector of word 'computer'

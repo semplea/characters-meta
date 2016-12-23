@@ -23,7 +23,7 @@ import numpy as np
 import imp
 import mwclient
 import hunspell
-from compute_meta import runMeta
+from computeMeta import runMeta
 from tools import *
 from nltk.internals import find_binary, find_file
 
@@ -1105,7 +1105,12 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 			print(json.dumps(jsonOut))
 
 		if meta:
-			runMeta(sentences, finalWordClasses['character'], job_labels)
+			# TODO save relevant info to file
+			# char_list and sentences by char (wsent?)
+			# anything else?
+			# Then load file instead of running script each time
+
+			runMeta(sentences, wsent, finalWordClasses['character'], job_labels)
 
 
 ########################################################################################################################

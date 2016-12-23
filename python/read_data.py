@@ -39,7 +39,7 @@ def readData():
 	rx = re.compile("[\w]+", re.UNICODE)
 	for lst in categories[1:]:
 		str_name = lst[0]
-		str_name = removeAccents(str_name)
+		#str_name = removeAccents(str_name)
 		cat_name = rx.findall(str_name)[0]
 		cats_dict[cat_name] = lst[1:]
 	return cats_dict

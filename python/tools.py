@@ -6,6 +6,8 @@ import pandas as pd
 from math import log
 import matplotlib.pyplot as plt
 import seaborn as sns
+import codecs
+import pickle
 
 def getScriptPath():
 	return "/home/alexis/Documents/EPFL/MS3/Project/python"
@@ -105,10 +107,19 @@ def buildSentsByChar(chars, sents):
 				ix_lst.append(ix)
 	return char_sent_map
 
-def plotJobScores(similarity_scores):
+
+def writeData(bookfile, char_list, wsent, sentences):
 	"""
-	Create plot of job score results
+	Write data relevant to book to pickle files
 	"""
-	palette = sns.color_palette()
-	ax = sns.swarmplot(x='Character', y='Similarity', data=similarity_scores, hue='Predictor', palette={'Count': palette[0], 'Proximity': palette[2]})
-	plt.show()
+	file_prefix = '../books-txt/predicted-data/'
+	name_prefix = bookfile.split('/')[-1][:-4] # TODO get without .txt
+	# write list to file, one element per line
+	with codecs.open(file_prefix + name_prefix + '-chars.p', mode='wb') as f:
+		pickle.dump(char_list, f)
+	# write characters sentences dict to file in json format
+	with codecs.open(file_prefix + 	name_prefix + '-charsents.p', mode='wb') as f:
+		pickle.dump(wsent, f)
+	# write sentences dict to file in json format
+	with codecs.open(file_prefix + name_prefix + '-sents.p', mode='wb') as f:
+		pickle.dump(sentences, f)
