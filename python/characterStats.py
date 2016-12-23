@@ -1117,7 +1117,7 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 
 try:
 	opts, args = getopt.getopt(
-		sys.argv[1:], "abcdfgmsxw:v",
+		sys.argv[1:], "abcdfgsxw:vm",
 		["help", "benchmark", "graphs", "api", "file=", "focus=", "save", "mwclient=", "mincount=", "meta"])
 except getopt.GetoptError as err:
 	# print help information and exit:

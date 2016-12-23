@@ -19,7 +19,7 @@ def runMeta(sentences, wsent, char_list, job_labels):
         Compound names are concatenated as in sentences
     :param job_labels: dict of character -> [job label]
     """
-    TOP_N_JOBS = 2
+    TOP_N_JOBS = 5
     char_list = list(reversed(char_list))
 
     # classifier_data_dict has keys [u'tromper', u'nutrition', u'\xe9motions', u'dormir', u'raison', u'\xe9tats', u'vouloir', u'tuer', u'gu\xe9rir', u'relations', u'm\xe9tiers', u'salutations', u'soupir', u'pens\xe9e', u'parole', u'foi']
@@ -27,7 +27,7 @@ def runMeta(sentences, wsent, char_list, job_labels):
     job_list = classifier_data_dict[u'm\xe9tiers']
     full_count_score = {}
     full_proximity_score = {}
-    sents_by_char = buildSentsByChar(char_list, sentences)
+    sents_by_char = wsent
     word2vec_model = MyModel()
     N_CHARS = 10
     similarity_scores = pd.DataFrame(columns=['Character', 'Label-Guess', 'Similarity', 'Predictor', 'Rank'])
@@ -43,7 +43,6 @@ def runMeta(sentences, wsent, char_list, job_labels):
         # top_preds is concatenation of the different scores - for plotting purposes
         # contains tuples with ((rank_in_list, pred), predictor)
         top_preds = zip(list(enumerate(full_count_score[character])), ['Count'] * len(full_count_score[character])) + zip(list(enumerate(full_proximity_score[character])), ['Proximity'] * len(full_count_score[character]))
-        print(top_preds)
 
         # Generate vector similarities
         if job_labels.get(character):
@@ -117,7 +116,7 @@ def sentenceWindow(sentences, index, window, s_type):
     :param window: window size
     :type: 'nostop', 'words' or 'tags'
     """
-    w_range = (index-window, index+window)
+    w_range = (index-window, index+window) if index+window < len(sentences) else (index-window, len(sentences)-1)
     res = []
     for s in w_range:
         res += sentences[s][s_type]

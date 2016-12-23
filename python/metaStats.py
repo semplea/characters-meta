@@ -9,12 +9,13 @@ import getopt
 from computeMeta import runMeta
 import re
 
-argv = sys.argv[:1]
-book = 'letourdumondeen80jours'
 try:
-    opts, args = getopt.getopt(argv, "b:", ["book="])
-except getopt.GetoptError:
+    opts, args = getopt.getopt(sys.argv[1:], "b:", ["book="])
+except getopt.GetoptError as err:
+    print(err)
     sys.exit(2)
+
+book = ''
 
 for opt, arg in opts:
     if opt in ("-b", "--book"):
