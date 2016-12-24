@@ -31,6 +31,7 @@ def runMeta(sentences, wsent, char_list, job_labels):
     word2vec_model = MyModel()
     char_list = list(reversed(char_list))
     N_CHARS = 10 # Num of chars to compute scores for -> default all
+    predictors = ['count', 'proximity']
 
     # Stores for predictor scores
     # count_full_const = {}
@@ -43,114 +44,127 @@ def runMeta(sentences, wsent, char_list, job_labels):
     # proximity_expo_decr = {}
 
     # DataFrames for plotting
-    df_count_full_const = jobCountPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True)
-    df_count_full_decr = jobCountPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=True)
-    df_count_expo_const = jobCountPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=False)
-    df_count_expo_decr = jobCountPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=False)
-    df_proximity_full_const = jobProxPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True)
-    df_proximity_full_decr = jobProxPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=True)
-    df_proximity_expo_const = jobProxPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=False)
-    df_proximity_expo_decr = jobProxPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=False)
+    p = predictors[0]
+    df_count_full_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True, predictor=p)
+    df_count_full_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=True, predictor=p)
+    df_count_expo_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=False, predictor=p)
+    df_count_expo_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=False, predictor=p)
 
-
-
-    # OLD Stores
-    # TODO remove these after changing rest
-    full_count_score = {}
-    full_proximity_score = {}
-    # Dataframes
-    similarity_scores = pd.DataFrame(columns=['Character', 'Label-Guess', 'Similarity', 'Predictor', 'Rank'])
-    TOP_N_JOBS = 5
-
-
-    for i, character in enumerate(char_list):
-        # scores per character
-        count_score, proximity_score = jobPredictor(sentences, sents_by_char[character], character, job_list)
-
-        full_count_score[character] = sortNTopByVal(count_score, TOP_N_JOBS, descending=True)
-        full_proximity_score[character] = sortNTopByVal(proximity_score, TOP_N_JOBS, descending=False)
-
-        # Choose best predictions for meta benchmark
-        # top_preds is concatenation of the different scores - for plotting purposes
-        # contains tuples with ((rank_in_list, pred), predictor)
-        top_preds = zip(list(enumerate(full_count_score[character])), ['Count'] * len(full_count_score[character])) + zip(list(enumerate(full_proximity_score[character])), ['Proximity'] * len(full_count_score[character]))
-
-        # Generate vector similarities
-        if job_labels.get(character):
-            for label in job_labels.get(character):
-                for rank_pred, method in top_preds:
-                    # Add rows to Dataframe iteratively
-                    row_idx = similarity_scores.shape[0]
-                    pred = rank_pred[1]
-                    rank = rank_pred[0]
-                    score = word2vec_model.compareWords(pred[0], label)
-                    similarity_scores.loc[row_idx] = [character, (label, pred), score, method, rank]
+    p = predictors[1]
+    df_proximity_full_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True, predictor=p)
+    df_proximity_full_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=True, predictor=p)
+    df_proximity_expo_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=False, predictor=p)
+    df_proximity_expo_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=False, predictor=p)
 
     # PRINTING RESULTS
-    print('===========LABELS=============')
-    printStore(job_labels)
-    print("")
-    print('===========COUNT SCORE=============')
-    printStore(full_count_score)
-    print("")
-    print('===========PROXIMITY SCORE=============')
-    printStore(full_proximity_score)
-    print("")
+    # print('===========LABELS=============')
+    # printStore(job_labels)
+    # print("")
+    # print('===========COUNT SCORE=============')
+    # printStore(full_count_score)
+    # print("")
+    # print('===========PROXIMITY SCORE=============')
+    # printStore(full_proximity_score)
+    # print("")
     print('===========SIMILARITY SCORE=============')
     plotJobScores(df_count_full_const)
 
     # Computing job suggestion similarity with labels
 
-
-def jobPredictor(sentences, char_sents, char_name, job_list, job_labels=defaultdict(int), decreasing_score=True):
+def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True, predictor='count'):
     """
-    Find potential jobs for candidate in char_name.
-    Return list[(jobname, score)]
+    Computes predictions and scores for predictor with parameters decreasing and full
     """
-    count_score = {}
-    proximity_score = {}
-
     total_sents = len(sentences)
-    total_char_sents = len(char_sents)
+    full_score = {}
+    TOP_N_JOBS = 5
+    df = pd.DataFrame(columns=['Character', 'Label-Guess', 'Similarity', 'Rank'])
+    job_count = defaultdict(int)
 
     # take neighbor sentence to the left and right to create window of sentences
     # take sentence index +-window
     window = 2
-    n = len(sentences)
-    job_count = defaultdict(int)
 
-    # Compute score for all character sents
-    for i in char_sents:
-        w_range = sentenceWindow(sentences, i, window)
-        sent_nostop = []
-        sent_words = []
-        sent_tags = []
-        for s in w_range:
-            sent_nostop += sentences[s]['nostop']
-            sent_words += sentences[s]['words']
-            sent_tags += sentences[s]['tags']
-        if char_name in sent_nostop:
-            for job in job_list:
-                if unicode(job) in sent_nostop:
-                    ##### count score
-                    # +1 for each mention
-                    # storeCount(count_score, job)
-                    # -log(i/n) for each mention
-                    proportion = float(i+1)/ n
-                    storeIncrement(count_score, job, -log(proportion))
+    # For each character
+    for i, character in enumerate(char_list):
+        char_sents = {}
+        score = {}
+        # For each sentence in which chaarater is mentioned
+        char_sents = sents_by_char[character]
+        if not full:
+            # Get reduced sentence set
+            # ASSUMPTION, either 10 or 10th of character mentions
+            char_sents = char_sents[:int(max(10, len(char_sents)/10))]
 
-                    ##### mean proximity score
-                    dist = abs(getIdxOfWord(sent_words, job) - getIdxOfWord(sent_words, char_name))
-                    storeIncrement(proximity_score, job, dist)
-                    job_count[job] += 1
+        for i in char_sents:
+            # Compute sentence window to look at
+            w_range = sentenceWindow(sentences, i, window)
+            sent_nostop = []
+            sent_words = []
+            sent_tags = []
+            for s in w_range:
+                sent_nostop += sentences[s]['nostop']
+                sent_words += sentences[s]['words']
+                sent_tags += sentences[s]['tags']
+            # If character is mentioned in sentence window, add to score
+            if character in sent_nostop:
+                for job in job_list:
+                    if unicode(job) in sent_nostop:
+                        if predictor == 'count':
+                            countPredict(score, decreasing, job, i, total_sents)
+                        elif predictor == 'proximity':
+                            proxPredict(score, decreasing, character, job, job_count, sent_words)
 
-    # divide by total matches to get mean proximity measure
-    proximity_score = {k: float(v) / job_count[k] for k,v in proximity_score.items()}
+        if predictor == 'proximity':
+            # divide by total matches to get mean proximity measure
+            score = {k: float(v) / job_count[k] for k,v in score.items()}
 
-    # Get reduced sentence set -> assumption, either 10 or 10th of character mentions
-    reduced_char_sents = char_sents[:max(10, len(char_sents)/10)]
+        full_score[character] = sortNTopByVal(score, TOP_N_JOBS, descending=True)
 
-    return count_score, proximity_score
+        # contains tuples with (rank_in_list, pred)
+        preds = list(enumerate(full_score[character]))
+
+        df = get_df(df, character, preds, job_labels, word2vec_model)
+    return df
+
+
+def countPredict(score, decreasing, job, pos, total_sents):
+    # COUNT SCORE
+    # 1 per mention
+    if not decreasing:
+        storeIncrement(score, job, 1)
+    # Decrease score increment as mentions progress
+    else:
+        # +1 for each mention
+        # storeCount(count_score, job)
+        # -log(i/n) for each mention
+        proportion = float(pos+1)/ total_sents
+        storeIncrement(score, job, -log(proportion))
+
+
+def proxPredict(score, decreasing, character, job, job_count, sent_words):
+    if not decreasing:
+        dist = abs(getIdxOfWord(sent_words, job) - getIdxOfWord(sent_words, character))
+        storeIncrement(score, job, dist)
+        job_count[job] += 1
+    # Decrease score increment as mentions progress
+    else:
+        pass
+
+
+def get_df(df, character, preds, job_labels, word2vec_model):
+    """
+    Generate vector similarities and return DataFrame
+    """
+    if job_labels.get(character):
+        for label in job_labels.get(character):
+            for rank, pred in preds:
+                # Add rows to Dataframe iteratively
+                row_idx = df.shape[0]
+                score = word2vec_model.compareWords(pred[0], label)
+                df.loc[row_idx] = [character, (label, pred), score, rank]
+
+    return df
 
 
 def sentenceWindow(sentences, index, window):
@@ -169,144 +183,3 @@ def sentenceWindow(sentences, index, window):
 def printStore(store):
     for k, v in store.items():
         print(k, v)
-
-def jobCountPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True):
-    """
-    Return predictions for all chars in char_list based on count of jobs in sents.
-    """
-    total_sents = len(sentences)
-    full_score = {}
-    TOP_N_JOBS = 5
-    df = pd.DataFrame(columns=['Character', 'Label-Guess', 'Similarity', 'Rank'])
-
-    # take neighbor sentence to the left and right to create window of sentences
-    # take sentence index +-window
-    window = 2
-
-    # For each character
-    for i, character in enumerate(char_list):
-        char_sents = {}
-        score = {}
-        # For each sentence in which chaarater is mentioned
-        char_sents = sents_by_char[character]
-        if not full:
-            # Get reduced sentence set
-            # ASSUMPTION, either 10 or 10th of character mentions
-            char_sents = char_sents[:int(max(10, len(char_sents)/10))]
-
-        for i in char_sents:
-            # Compute sentence window to look at
-            w_range = sentenceWindow(sentences, i, window)
-            sent_nostop = []
-            sent_words = []
-            sent_tags = []
-            for s in w_range:
-                sent_nostop += sentences[s]['nostop']
-                sent_words += sentences[s]['words']
-                sent_tags += sentences[s]['tags']
-            # If character is mentioned in sentence window, add to score
-            if character in sent_nostop:
-                for job in job_list:
-                    if unicode(job) in sent_nostop:
-                        # COUNT SCORE
-                        # 1 per mention
-                        if not decreasing:
-                            storeIncrement(score, job, 1)
-                        # Decrease score increment as mentions progress
-                        else:
-                            # +1 for each mention
-                            # storeCount(count_score, job)
-                            # -log(i/n) for each mention
-                            proportion = float(i+1)/ total_sents
-                            storeIncrement(score, job, -log(proportion))
-
-
-        full_score[character] = sortNTopByVal(score, TOP_N_JOBS, descending=True)
-
-        # contains tuples with (rank_in_list, pred)
-        preds = list(enumerate(full_score[character]))
-
-        df = get_df(df, character, preds, job_labels, word2vec_model)
-    return df
-
-
-
-def jobProxPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True):
-    """
-    Return DataFrame with average proximity score per job.
-    """
-    total_sents = len(sentences)
-    full_score = {}
-    TOP_N_JOBS = 5
-    df = pd.DataFrame(columns=['Character', 'Label-Guess', 'Similarity', 'Rank'])
-
-    # take neighbor sentence to the left and right to create window of sentences
-    # take sentence index +-window
-    window = 2
-    job_count = defaultdict(int)
-
-    # For each character
-    for i, character in enumerate(char_list):
-        char_sents = {}
-        score = {}
-        # For each sentence in which chaarater is mentioned
-        char_sents = sents_by_char[character]
-        if not full:
-            # Get reduced sentence set
-            # ASSUMPTION, either 10 or 10th of character mentions
-            char_sents = char_sents[:int(max(10, len(char_sents)/10))]
-
-        for i in char_sents:
-            # Compute sentence window to look at
-            w_range = sentenceWindow(sentences, i, window)
-            sent_nostop = []
-            sent_words = []
-            sent_tags = []
-            for s in w_range:
-                sent_nostop += sentences[s]['nostop']
-                sent_words += sentences[s]['words']
-                sent_tags += sentences[s]['tags']
-            # If character is mentioned in sentence window, add to score
-            if character in sent_nostop:
-                for job in job_list:
-                    if unicode(job) in sent_nostop:
-                        # Constant
-                        if not decreasing:
-                            dist = abs(getIdxOfWord(sent_words, job) - getIdxOfWord(sent_words, character))
-                            storeIncrement(score, job, dist)
-                            job_count[job] += 1
-                        # Decrease score increment as mentions progress
-                        else:
-                            pass
-                            # +1 for each mention
-                            # storeCount(count_score, job)
-                            # -log(i/n) for each mention
-                            # TODO
-
-        # divide by total matches to get mean proximity measure
-        score = {k: float(v) / job_count[k] for k,v in score.items()}
-
-        # Sort descending
-        full_score[character] = sortNTopByVal(score, TOP_N_JOBS, descending=False)
-
-        # contains tuples with (rank_in_list, pred)
-        preds = list(enumerate(full_score[character]))
-
-        df = get_df(df, character, preds, job_labels, word2vec_model)
-    return df
-
-# visualize with t-SNE http://homepage.tudelft.nl/19j49/t-SNE.html?
-
-def get_df(df, character, preds, job_labels, word2vec_model):
-    """
-    Generate vector similarities and return DataFrame
-    """
-    if job_labels.get(character):
-        for label in job_labels.get(character):
-            for rank, pred in preds:
-                # Add rows to Dataframe iteratively
-                row_idx = df.shape[0]
-                score = word2vec_model.compareWords(pred[0], label)
-                df.loc[row_idx] = [character, (label, pred), score, rank]
-
-    return df
