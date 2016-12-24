@@ -355,6 +355,9 @@ def localProximityPredictor(word, surroundingTerms, debug=False):
 # BOT 4 ################################################################################################################
 
 def getSurroundings(array, idx):
+	"""
+	Return words +-2 from idx
+	"""
 	surroundings = []
 	if idx > 1:
 		surroundings.append(array[idx - 2])

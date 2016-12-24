@@ -14,7 +14,7 @@ def runMeta(sentences, wsent, char_list, job_labels):
     :param sentences: list(dict)
         List of dicts. Each dict is a sentence
         and contains 'nostop', 'words', 'tags'
-    # :param char_list: list(unicode)jo
+    :param char_list: list(unicode)
         List of character names in unicode
         Compound names are concatenated as in sentences
     :param job_labels: dict of character -> [job label]
@@ -31,10 +31,11 @@ def runMeta(sentences, wsent, char_list, job_labels):
     word2vec_model = MyModel()
     N_CHARS = 10
     similarity_scores = pd.DataFrame(columns=['Character', 'Label-Guess', 'Similarity', 'Predictor', 'Rank'])
-
-    for character in char_list[:N_CHARS]:
+    char_threshold = len(char_list) / 3 ### Assumption 1/3 of chars are main chars
+    for i, character in enumerate(char_list):
         # scores per character
-        count_score, proximity_score = jobPredictor(sentences, sents_by_char[character], character, job_list)
+        char_is_main = True if i < char_threshold else False
+        count_score, proximity_score = jobPredictor(sentences, sents_by_char[character], character, char_is_main job_list)
 
         full_count_score[character] = sortNTopByVal(count_score, TOP_N_JOBS, True)
         full_proximity_score[character] = sortNTopByVal(proximity_score, TOP_N_JOBS)
@@ -71,7 +72,7 @@ def runMeta(sentences, wsent, char_list, job_labels):
     # Computing job suggestion similarity with labels
 
 
-def jobPredictor(sentences, char_sents, char_name, job_list, job_labels=defaultdict(int)):
+def jobPredictor(sentences, char_sents, char_name, job_list, char_is_main, job_labels=defaultdict(int), decreasing_score=True):
     """
     Find potential jobs for candidate in char_name.
     Return list[(jobname, score)]
@@ -79,36 +80,53 @@ def jobPredictor(sentences, char_sents, char_name, job_list, job_labels=defaultd
     count_score = {}
     proximity_score = {}
 
+    total_sents = len(sentences)
+    total_char_sents = len(char_sents)
+
     # take neighbor sentence to the left and right to create window of sentences
     # take sentence index +-window
     window = 2
     n = len(sentences)
     job_count = defaultdict(int)
+
+    # Compute score for all character sents
     for i in char_sents:
-        sent_nostop = sentenceWindow(sentences, i, window, 'nostop')
-        sent_words = sentenceWindow(sentences, i, window, 'words')
-        sent_tags = sentenceWindow(sentences, i, window, 'tags')
+        w_range = sentenceWindow(sentences, i, window)
+        sent_nostop = []
+        sent_words = []
+        sent_tags = []
+        for s in w_range:
+            sent_nostop += sentences[s]['nostop']
+            sent_words += sentences[s]['words']
+            sent_tags += sentences[s]['tags']
         if char_name in sent_nostop:
             for job in job_list:
                 if unicode(job) in sent_nostop:
+                    ##### count score
                     # +1 for each mention
                     # storeCount(count_score, job)
                     # -log(i/n) for each mention
                     proportion = float(i+1)/ n
                     storeIncrement(count_score, job, -log(proportion))
-                    # mean proximity score
+
+                    ##### mean proximity score
                     dist = abs(getIdxOfWord(sent_words, job) - getIdxOfWord(sent_words, char_name))
                     storeIncrement(proximity_score, job, dist)
                     job_count[job] += 1
-                # divide by total matches to get mean proximity measure
+            # divide by total matches to get mean proximity measure
             if job_count[job]:
                 proximity_score[job] = float(proximity_score[job]) / float(job_count[job])
-    proximity_score = {k:
-            float(v) / job_count[k] for k,v in proximity_score.items()}
+    proximity_score = {k: float(v) / job_count[k] for k,v in proximity_score.items()}
+
+    # Get reduced sentence set -> assumption, either 10 or 10th of character mentions
+    reduced_char_sents = char_sents[:max(10, len(char_sents)/10)]
+
+
+
     return count_score, proximity_score
 
 
-def sentenceWindow(sentences, index, window, s_type):
+def sentenceWindow(sentences, index, window):
     """
     :param sentences: List of dicts. Each dict is a sentence
     and contains 'nostop', 'words', 'tags'
@@ -116,11 +134,10 @@ def sentenceWindow(sentences, index, window, s_type):
     :param window: window size
     :type: 'nostop', 'words' or 'tags'
     """
-    w_range = (index-window, index+window) if index+window < len(sentences) else (index-window, len(sentences)-1)
-    res = []
-    for s in w_range:
-        res += sentences[s][s_type]
-    return res
+    min_idx = index-window if index-window >= 0 else 0
+    max_idx = index+windwo if index+window < len(sentences) else len(sentences)-1
+    w_range = (min_idx, max_idx)
+    w_range
 
 
 def printStore(store):
