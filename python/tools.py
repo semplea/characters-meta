@@ -45,15 +45,15 @@ def storeCount(array, key):
 		array[key] = 1
 
 
-def storeIncrement(array, key, incr):
+def storeIncrement(store, key, incr):
 	"""
 	Increment value for key in store by given increment.
 	:param incr: float
 	"""
-	if key in array:
-		array[key] += incr
+	if key in store:
+		store[key] += incr
 	else:
-		array[key] = incr
+		store[key] = incr
 
 
 def idxForMaxKeyValPair(array):
@@ -98,6 +98,7 @@ def sortNTopByVal(tosort, top, descending=False):
 
 def buildSentsByChar(chars, sents):
 	"""
+	DEPRECATED-NOT NEEDED ANY MORE
 	Build map of chars to list of indices where characters occur in sents.
 	"""
 	char_sent_map = dict.fromkeys(chars, list())

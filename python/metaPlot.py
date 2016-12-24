@@ -16,8 +16,6 @@ def plotJobScores(similarity_scores):
 		x='Character',
 		y='Similarity',
 		data=similarity_scores,
-		hue='Predictor',
-		palette={'Count': palette[0], 'Proximity': palette[2]},
 		ax=ax)
 	plt.show()
 
@@ -26,9 +24,15 @@ def plotJobScores(similarity_scores):
 		x='Rank',
 		y='Similarity',
 		data=similarity_scores,
-		hue='Predictor',
-		palette={'Count': palette[0], 'Proximity': palette[2]},
 		ax=ax)
 	plt.show()
 
-	# add scatter plot for rank to similarity score
+	# fig, ax = plt.subplots()
+	# sns.swarmplot(
+	# 	x='Rank',
+	# 	y='Similarity',
+	# 	data=similarity_scores,
+	# 	hue='Predictor',
+	# 	palette={'Count': palette[0], 'Proximity': palette[2]},
+	# 	ax=ax)
+	# plt.show()
