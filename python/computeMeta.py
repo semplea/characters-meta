@@ -14,28 +14,59 @@ def runMeta(sentences, wsent, char_list, job_labels):
     :param sentences: list(dict)
         List of dicts. Each dict is a sentence
         and contains 'nostop', 'words', 'tags'
+    :param wsetn: dictionary of sentences by character
     :param char_list: list(unicode)
         List of character names in unicode
         Compound names are concatenated as in sentences
     :param job_labels: dict of character -> [job label]
     """
-    TOP_N_JOBS = 5
-    char_list = list(reversed(char_list))
+    ### Define parameters
 
     # classifier_data_dict has keys [u'tromper', u'nutrition', u'\xe9motions', u'dormir', u'raison', u'\xe9tats', u'vouloir', u'tuer', u'gu\xe9rir', u'relations', u'm\xe9tiers', u'salutations', u'soupir', u'pens\xe9e', u'parole', u'foi']
     classifier_data_dict = readData()
     job_list = classifier_data_dict[u'm\xe9tiers']
-    full_count_score = {}
-    full_proximity_score = {}
     sents_by_char = wsent
     word2vec_model = MyModel()
-    N_CHARS = 10
-    similarity_scores = pd.DataFrame(columns=['Character', 'Label-Guess', 'Similarity', 'Predictor', 'Rank'])
+    TOP_N_JOBS = 5
+    char_list = list(reversed(char_list))
+    N_CHARS = 10 # Num of chars to compute scores for -> default all
     char_threshold = len(char_list) / 3 ### Assumption 1/3 of chars are main chars
+
+    # Stores for predictor scores
+    count_full_const = {}
+    count_full_decr = {}
+    count_expo_const = {}
+    count_expo_decr = {}
+    proximity_full_const = {}
+    proximity_full_decr = {}
+    proximity_expo_const = {}
+    proximity_expo_decr = {}
+
+    # DataFrames for plotting
+    cols = ['Character', 'Label-Guess', 'Similarity', 'Rank']
+    df_count_full_const = pd.DataFrame(columns=cols)
+    df_count_full_decr = pd.DataFrame(columns=cols)
+    df_count_expo_const = pd.DataFrame(columns=cols)
+    df_count_expo_decr = pd.DataFrame(columns=cols)
+    df_proximity_full_const = pd.DataFrame(columns=cols)
+    df_proximity_full_decr = pd.DataFrame(columns=cols)
+    df_proximity_expo_const = pd.DataFrame(columns=cols)
+    df_proximity_expo_decr = pd.DataFrame(columns=cols)
+
+    
+
+    # OLD Stores
+    # TODO remove these after changing rest
+    full_count_score = {}
+    full_proximity_score = {}
+    # Dataframes
+    similarity_scores = pd.DataFrame(columns=['Character', 'Label-Guess', 'Similarity', 'Predictor', 'Rank'])
+
+
     for i, character in enumerate(char_list):
         # scores per character
         char_is_main = True if i < char_threshold else False
-        count_score, proximity_score = jobPredictor(sentences, sents_by_char[character], character, char_is_main job_list)
+        count_score, proximity_score = jobPredictor(sentences, sents_by_char[character], character, char_is_main, job_list)
 
         full_count_score[character] = sortNTopByVal(count_score, TOP_N_JOBS, True)
         full_proximity_score[character] = sortNTopByVal(proximity_score, TOP_N_JOBS)
