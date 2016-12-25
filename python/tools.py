@@ -124,3 +124,39 @@ def writeData(bookfile, char_list, wsent, sentences):
 	# write sentences dict to file in json format
 	with codecs.open(file_prefix + name_prefix + '-sents.p', mode='wb') as f:
 		pickle.dump(sentences, f)
+
+
+def getSurroundings(array, idx, window=2):
+	"""
+	Return words +-2 from idx
+	"""
+	surroundings = []
+	if idx > 1:
+		surroundings.append(array[idx - 2])
+	else:
+		surroundings.append('---')
+	if idx > 0:
+		surroundings.append(array[idx - 1])
+	else:
+		surroundings.append('---')
+	if idx < len(array) - 1:
+		surroundings.append(array[idx + 1])
+	else:
+		surroundings.append('---')
+	if idx < len(array) - 2:
+		surroundings.append(array[idx + 2])
+	else:
+		surroundings.append('---')
+	return surroundings
+
+
+def getWindow(lst, index, window):
+    """
+    :param lst: Some list
+    :param index: index at senter of window
+    :param window: window size -> +- window on each side
+		Total size of 2*window+1
+    """
+    min_idx = index-window if index-window >= 0 else 0
+    max_idx = index+window if index+window < len(lst) else len(lst)-1
+    return range(min_idx, max_idx+1)

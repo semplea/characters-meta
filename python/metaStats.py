@@ -8,6 +8,7 @@ import sys
 import getopt
 from computeMeta import runMeta
 import re
+from collections import defaultdict
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "b:", ["book="])
@@ -33,11 +34,21 @@ char_sents = loadData('charsents')
 char_list = loadData('chars')
 
 # get job_labels
-job_labels = {}
+job_labels = defaultdict(lambda: [])
+gender_label = defaultdict(lambda: '')
 with codecs.open('../books-txt/books-txt/' + book + '.corr', 'r', 'utf8') as f:
     for i, raw_line in enumerate(f):
         line = raw_line.strip().split(u"\t")
         if len(line) > 3 and line[1] == 'character':
             job_labels[line[0]] = re.findall(r'\w+', unicode(line[3]), re.UNICODE)
+            if len(line) > 4:
+                if line[4] in ['m', 'f']:
+                    gender_label[line[0]] = line[4]
 
-runMeta(sents, char_sents, char_list, job_labels)
+runMeta(book, sents, char_sents, char_list, job_labels, gender_label)
+
+# start=17
+# stop=18
+#
+# print([sents[i]['words'] for i in char_sents['MrsAouda'][start:stop]])
+# print([sents[i]['tags'] for i in char_sents['MrsAouda'][start:stop]])

@@ -354,30 +354,6 @@ def localProximityPredictor(word, surroundingTerms, debug=False):
 
 # BOT 4 ################################################################################################################
 
-def getSurroundings(array, idx):
-	"""
-	Return words +-2 from idx
-	"""
-	surroundings = []
-	if idx > 1:
-		surroundings.append(array[idx - 2])
-	else:
-		surroundings.append('---')
-	if idx > 0:
-		surroundings.append(array[idx - 1])
-	else:
-		surroundings.append('---')
-	if idx < len(array) - 1:
-		surroundings.append(array[idx + 1])
-	else:
-		surroundings.append('---')
-	if idx < len(array) - 2:
-		surroundings.append(array[idx + 2])
-	else:
-		surroundings.append('---')
-	return surroundings
-
-
 def structuralPredictor(word, indexesOfSentencesContainingWord, sentences, debug=False):
 	if debug:
 		print("***** Structural results for " + word + " *****")

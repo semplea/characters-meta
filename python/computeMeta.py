@@ -6,9 +6,11 @@ from math import log
 from collections import defaultdict
 from word_similarity import MyModel
 import pandas as pd
+import re
+import pickle
 
 
-def runMeta(sentences, wsent, char_list, job_labels):
+def runMeta(book, sentences, wsent, char_list, job_labels, gender_label):
     """
     Compute various metadata about characters in char_list
     :param sentences: list(dict)
@@ -20,16 +22,17 @@ def runMeta(sentences, wsent, char_list, job_labels):
         Compound names are concatenated as in sentences
     :param job_labels: dict of character -> [job label]
     """
-    ### Define parameters
-
+    ### GLOBAL PARAMS
     # classifier_data_dict has keys [u'tromper', u'nutrition', u'\xe9motions', u'dormir', u'raison', u'\xe9tats', u'vouloir', u'tuer', u'gu\xe9rir', u'relations', u'm\xe9tiers', u'salutations', u'soupir', u'pens\xe9e', u'parole', u'foi']
     classifier_data_dict = readData()
-
-    ################ JOBS #################
-    job_list = classifier_data_dict[u'm\xe9tiers']
     sents_by_char = wsent
     word2vec_model = MyModel()
     char_list = list(reversed(char_list))
+    save_path = 'metadata/' + book + '_'
+
+    ################ JOBS #################
+    # Define parameters
+    job_list = classifier_data_dict[u'm\xe9tiers']
     N_CHARS = 10 # Num of chars to compute scores for -> default all
     predictors = ['count', 'proximity']
 
@@ -66,10 +69,162 @@ def runMeta(sentences, wsent, char_list, job_labels):
     # print('===========PROXIMITY SCORE=============')
     # printStore(full_proximity_score)
     # print("")
-    print('===========SIMILARITY SCORE=============')
-    plotJobScores(df_count_full_const)
+    # print('===========SIMILARITY SCORE=============')
+    # plotJobScores(df_count_full_const)
 
-    # Computing job suggestion similarity with labels
+    # df_count_full_const.to_csv(save_path + 'count_full_const.csv', encoding='utf-8')
+    # df_count_full_decr.to_csv(save_path + 'count_full_decr.csv', encoding='utf-8')
+    # df_count_expo_const.to_csv(save_path + 'count_expo_const.csv', encoding='utf-8')
+    # df_count_expo_decr.to_csv(save_path + 'count_expo_decr.csv', encoding='utf-8')
+    # df_proximity_full_const.to_csv(save_path + 'proximity_full_const.csv', encoding='utf-8')
+    # df_proximity_full_decr.to_csv(save_path + 'proximity_full_decr.csv', encoding='utf-8')
+    # df_proximity_expo_const.to_csv(save_path + 'proximity_expo_const.csv', encoding='utf-8')
+    # df_proximity_expo_decr.to_csv(save_path + 'proximity_expo_decr.csv', encoding='utf-8')
+
+    ################## GENDER ###################
+
+    gender_nosolo = genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=False)
+    gender_solo = genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=True)
+
+    gender_nosolo.to_csv(save_path + 'gender_nosolo.csv', encoding='utf-8')
+    gender_solo.to_csv(save_path + 'gender_solo.csv', encoding='utf-8')
+
+
+def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=False):
+    # Try on full and exposition -> even more local? one of the first infos we get... window of first 2 mentions
+    # include factor for proximity
+    window = 5
+    N_CHARS = 3
+    df = pd.DataFrame(columns=['Character', 'Label', 'Title_score', 'Title_score_div',
+                'Title_in_name', 'Adj_score', 'Adj_score_div', 'Pron_score', 'Pron_score_div',
+                'Mention_count', 'Book_length', 'Span', 'Interaction_count', 'Char_count'])
+    # df.loc[row_idx] = [
+        # character, gender_label[character], title, title/len(char_sents),
+        # title_in_name, adj, adj/len(char_sents), pron, pron/len(char_sents),
+        # len(char_sents), len(sentences), abs(char_sents[0] - char_sents[-1]),
+        # abs(len(char_sents) - len(solo_sents)), len(char_list)]
+    for i, character in enumerate(char_list):
+        char_sents = sents_by_char[character]
+
+        f_title = [u'madame', u'mademoiselle', u'mme', u'mlle', u'm\xe8re', u'mrs', u'ms']
+        m_title = [u'monsieur', u'm', u'mr', u'p\xe8re']
+        title = 0.0
+        title_in_name = 0.0
+        # adj endings for feminin and masculin
+        f_adj2 = [u've', u'ce', u'se']
+        f_adj3 = [u'gue', u'sse', u'que', u'che', u'tte', u'\xe8te', u'\xe8re']
+        f_adj4 = [u'elle', u'enne', u'onne', u'euse', u'cque']
+        m_adj1 = [u'g', u'f', u'x', u'c', u't']
+        m_adj2 = [u'el', u'er', u'en', u'on']
+        m_adj3 = [u'eur']
+        adj = 0.0
+        # pronoun score
+        pron = 0.0
+        # List of sents with only char in them
+
+        char_sents = set(char_sents)
+        others = char_list[:i] + char_list[i+1:]
+        other_sents = set()
+        for other in others:
+            other_sents = other_sents.union(set(sents_by_char[other]))
+        solo_sents = char_sents.difference(other_sents)
+
+        if solo:
+            char_sents = solo_sents
+        char_sents = list(char_sents)
+
+        # Count pronouns
+        for sent_idx in char_sents:
+            word_idx = getIdxOfWord(sentences[sent_idx]['words'], character)
+
+            # Full sentence
+            w_range = getWindow(char_sents, i, 1)
+            sent_words = []
+            sent_tags = []
+            for r in w_range:
+                sent_words += sentences[sent_idx]['words']
+                sent_tags += sentences[sent_idx]['tags']
+
+            # Subrange of words in sentence
+            # sent_words = []
+            # sent_tags = []
+            # w_range = getWindow(sentences[sent_idx]['words'], word_idx, 4)
+            # for r in w_range:
+            #     sent_words.append(sentences[sent_idx]['words'][r])
+            #     sent_tags.append(sentences[sent_idx]['tags'][r])
+
+            # Check if association with typical female or male titles
+            prev_word = sentences[sent_idx]['words'][word_idx-1]
+            if prev_word.lower() in f_title:
+                title += 1.0
+            elif prev_word.lower() in m_title:
+                title -= 1.0
+
+            # Check in name of character as well, if title included
+            # Not indicative would be very unlikely
+            # Almost cheat feature
+            camel_split = re.sub('(?!^)([A-Z][a-z]+)', r' \1', character).split()
+            if len(camel_split) > 1 and camel_split[0].lower() in f_title:
+                title_in_name += 1.0
+            elif len(camel_split) > 1 and camel_split[0].lower() in m_title:
+                title_in_name -= 1.0
+
+            # Score masculin and feminin personal pronouns
+            for i, tag in enumerate(sent_tags):
+                if tag == 'PRO:PER':
+                    word = sent_words[i]
+                    if word == u'il' or word == u'Il':
+                        pron -= 1.0
+                    elif word == u'elle' or word == u'Elle':
+                        pron += 1.0
+
+            # Score adjectives with masculin or feminin suffix
+            for i, tag in enumerate(sent_tags):
+                if tag == 'ADJ':
+                    word = sent_words[i]
+                    if word[-4:] in f_adj4:
+                        adj += 1.0
+                    elif word[-3:] in f_adj3:
+                        adj += 1.0
+                    elif word[-3:] in m_adj3:
+                        adj += 1.0
+                    elif word[-2:] in f_adj2:
+                        adj += 1.0
+                    elif word[-2:] in m_adj2:
+                        adj -= 1.0
+                    elif word[-1:] in m_adj1:
+                        adj -= 1.0
+
+        # print(character, 'pronoun score', pron, 'adj score', adj, 'title', title)
+
+        ### DECIDE
+        # Positive score -> f, negative -> m
+        thresh = 0.0
+        w1 =  w2 = 1.0 # default at 1.0, check if weight to maximise accuracy (and recall, precision)
+        res = '' # If empty, undecidable
+        if title > 0:
+            res = 'f'
+        elif title < 0:
+            res = 'm'
+        elif pron + adj > thresh:
+            res = 'f'
+        elif pron + adj < thresh:
+            res = 'm'
+        # print(character, res, gender_label[character], pron, adj, title)
+
+        # Add to df (only 'features', no prediction)
+        if gender_label.get(character) and gender_label[character] in [u'm', u'f'] and len(char_sents) > 0:
+            row_idx = df.shape[0]
+            df.loc[row_idx] = [
+                character, gender_label[character], title, title/len(char_sents),
+                title_in_name, adj, adj/len(char_sents), pron, pron/len(char_sents),
+                len(char_sents), len(sentences), abs(char_sents[0] - char_sents[-1]),
+                abs(len(char_sents) - len(solo_sents)), len(char_list)]
+
+    return df
+
+
+
 
 def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True, predictor='count'):
     """
@@ -78,7 +233,7 @@ def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word
     total_sents = len(sentences)
     full_score = {}
     TOP_N_JOBS = 5
-    df = pd.DataFrame(columns=['Character', 'Label-Guess', 'Similarity', 'Rank'])
+    df = pd.DataFrame(columns=['Character', 'Label_Guess', 'Similarity', 'Rank', 'Predictor', 'Mention_Count', 'Increment', 'Size'])
     job_count = defaultdict(int)
 
     # take neighbor sentence to the left and right to create window of sentences
@@ -98,7 +253,7 @@ def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word
 
         for i in char_sents:
             # Compute sentence window to look at
-            w_range = sentenceWindow(sentences, i, window)
+            w_range = getWindow(sentences, i, window)
             sent_nostop = []
             sent_words = []
             sent_tags = []
@@ -124,7 +279,7 @@ def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word
         # contains tuples with (rank_in_list, pred)
         preds = list(enumerate(full_score[character]))
 
-        df = get_df(df, character, preds, job_labels, word2vec_model)
+        df = get_df(df, character, preds, job_labels, word2vec_model, predictor, len(char_sents), full, decreasing)
     return df
 
 
@@ -152,7 +307,7 @@ def proxPredict(score, decreasing, character, job, job_count, sent_words):
         pass
 
 
-def get_df(df, character, preds, job_labels, word2vec_model):
+def get_df(df, character, preds, job_labels, word2vec_model, predictor, mentions, full, decreasing):
     """
     Generate vector similarities and return DataFrame
     """
@@ -162,22 +317,11 @@ def get_df(df, character, preds, job_labels, word2vec_model):
                 # Add rows to Dataframe iteratively
                 row_idx = df.shape[0]
                 score = word2vec_model.compareWords(pred[0], label)
-                df.loc[row_idx] = [character, (label, pred), score, rank]
+                incr = 'constant' if not decreasing else 'decreasing'
+                size = 'full' if full else 'exposition'
+                df.loc[row_idx] = [character, (label, pred), score, rank, predictor, mentions, incr, size]
 
     return df
-
-
-def sentenceWindow(sentences, index, window):
-    """
-    :param sentences: List of dicts. Each dict is a sentence
-    and contains 'nostop', 'words', 'tags'
-    :param index: index with character mention in sentence
-    :param window: window size
-    :type: 'nostop', 'words' or 'tags'
-    """
-    min_idx = index-window if index-window >= 0 else 0
-    max_idx = index+window if index+window < len(sentences) else len(sentences)-1
-    return (min_idx, max_idx)
 
 
 def printStore(store):
