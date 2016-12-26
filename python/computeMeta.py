@@ -72,14 +72,14 @@ def runMeta(book, sentences, wsent, char_list, job_labels, gender_label):
     # print('===========SIMILARITY SCORE=============')
     # plotJobScores(df_count_full_const)
 
-    # df_count_full_const.to_csv(save_path + 'count_full_const.csv', encoding='utf-8')
-    # df_count_full_decr.to_csv(save_path + 'count_full_decr.csv', encoding='utf-8')
-    # df_count_expo_const.to_csv(save_path + 'count_expo_const.csv', encoding='utf-8')
-    # df_count_expo_decr.to_csv(save_path + 'count_expo_decr.csv', encoding='utf-8')
-    # df_proximity_full_const.to_csv(save_path + 'proximity_full_const.csv', encoding='utf-8')
-    # df_proximity_full_decr.to_csv(save_path + 'proximity_full_decr.csv', encoding='utf-8')
-    # df_proximity_expo_const.to_csv(save_path + 'proximity_expo_const.csv', encoding='utf-8')
-    # df_proximity_expo_decr.to_csv(save_path + 'proximity_expo_decr.csv', encoding='utf-8')
+    df_count_full_const.to_csv(save_path + 'count_full_const.csv', encoding='utf-8')
+    df_count_full_decr.to_csv(save_path + 'count_full_decr.csv', encoding='utf-8')
+    df_count_expo_const.to_csv(save_path + 'count_expo_const.csv', encoding='utf-8')
+    df_count_expo_decr.to_csv(save_path + 'count_expo_decr.csv', encoding='utf-8')
+    df_proximity_full_const.to_csv(save_path + 'proximity_full_const.csv', encoding='utf-8')
+    df_proximity_full_decr.to_csv(save_path + 'proximity_full_decr.csv', encoding='utf-8')
+    df_proximity_expo_const.to_csv(save_path + 'proximity_expo_const.csv', encoding='utf-8')
+    df_proximity_expo_decr.to_csv(save_path + 'proximity_expo_decr.csv', encoding='utf-8')
 
     ################## GENDER ###################
 
@@ -128,7 +128,7 @@ def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True
         for other in others:
             other_sents = other_sents.union(set(sents_by_char[other]))
         solo_sents = char_sents.difference(other_sents)
-
+        interaction_count = len(char_sents) - len(solo_sents)
         if solo:
             char_sents = solo_sents
         char_sents = list(char_sents)
@@ -213,17 +213,20 @@ def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True
         # print(character, res, gender_label[character], pron, adj, title)
 
         # Add to df (only 'features', no prediction)
-        if gender_label.get(character) and gender_label[character] in [u'm', u'f'] and len(char_sents) > 0:
+        if gender_label.get(character) and gender_label[character] in [u'm', u'f']:
+            div = 1.0
+            span = 1.0
+            # In case in solo mode some chars have 0 sents
+            if len(char_sents) > 0:
+                div = len(char_sents)
+                span = abs(char_sents[0] - char_sents[-1])
             row_idx = df.shape[0]
             df.loc[row_idx] = [
-                character, gender_label[character], title, title/len(char_sents),
-                title_in_name, adj, adj/len(char_sents), pron, pron/len(char_sents),
-                len(char_sents), len(sentences), abs(char_sents[0] - char_sents[-1]),
-                abs(len(char_sents) - len(solo_sents)), len(char_list)]
+                character, gender_label[character], title, title/div,
+                title_in_name, adj, adj/div, pron, pron/div, div, len(sentences),
+                span, interaction_count, len(char_list)]
 
     return df
-
-
 
 
 def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True, predictor='count'):
