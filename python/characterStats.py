@@ -459,6 +459,8 @@ def tokenizeAndStructure(text):
 	allsentences = []
 	sent_words = []
 	sent_tags = []
+	sent_lemma = []
+	sent_lemmanostop = []
 	for tag in taggedText:
 		if "_CHAP_" in tag[0]:
 			if cnum != '':
@@ -467,14 +469,16 @@ def tokenizeAndStructure(text):
 			cnum = tag[0][6:]
 		elif tag[1] == u"SENT":
 			nostop = [w for w in sent_words if w not in stopwords]
-			sent = {u"words": sent_words, u"tags": sent_tags, u"nostop": nostop}
+			sent = {u"words": sent_words, u"tags": sent_tags, u"nostop": nostop, u"lemma": sent_lemma}
 			chapter_sentences_idx.append(len(allsentences))
 			allsentences.append(sent)
 			sent_words = []
 			sent_tags = []
+			sent_lemma = []
 		else:
 			sent_words.append(tag[0])
 			sent_tags.append(tag[1])
+			sent_lemma.append(tag[2])
 	return [chaps, allsentences]
 
 
@@ -1084,12 +1088,11 @@ def processBook(bookfile, mwsite, focus, benchmark, debug=False, verbose=False, 
 			print(json.dumps(jsonOut))
 
 		if meta:
-			# TODO save relevant info to file
-			# char_list and sentences by char (wsent?)
-			# anything else?
-			# Then load file instead of running script each time
+			book = bookfile.split('/')[-1][:-4]
+			# runMeta(book, sentences, wsent, finalWordClasses['character'], job_labels, gender_label)
 
-			runMeta(sentences, wsent, finalWordClasses['character'], job_labels)
+			# To SAVE the data computed for a book to pickled files
+			writeData(bookfile, finalWordClasses['character'], wsent, sentences)
 
 
 ########################################################################################################################
@@ -1107,7 +1110,8 @@ focus = u''
 mwclienturl = u''
 mwsite = False
 benchmark = {}
-job_labels = {}
+job_labels = collections.defaultdict(lambda: [])
+gender_label = collections.defaultdict(lambda: '')
 dobenchmark = False
 debug = False
 verbose = False
@@ -1160,6 +1164,10 @@ if dobenchmark:
 					# job labels available
 					if len(line) > 3 and line[1] == 'character':
 						job_labels[line[0]] = line[3]
+						# gender labels available
+						if len(line) > 4:
+							if line[4] in ['m', 'f']:
+								gender_label[line[0]] = line[4]
 
 			elif len(line) > 1:
 				# Line has name, type
@@ -1171,8 +1179,13 @@ elif meta:
 	with codecs.open(bookfile[:-4] + '.corr', 'r', 'utf8') as f:
 		for i, raw_line in enumerate(f):
 			line = raw_line.strip().split(u"\t")
+			# job labels
 			if len(line) > 3 and line[1] == 'character':
 				job_labels[line[0]] = re.findall(r'\w+', unicode(line[3]), re.UNICODE)
+				# gender labels
+				if len(line) > 4:
+					if line[4] in ['m', 'f']:
+						gender_label[line[0]] = line[4]
 
 processBook(bookfile, mwsite, focus, benchmark, debug, verbose, graphs, meta)
 

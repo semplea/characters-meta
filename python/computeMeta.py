@@ -8,9 +8,11 @@ from word_similarity import MyModel
 import pandas as pd
 import re
 import pickle
+from random import randrange
+import requests
 
 
-def runMeta(book, sentences, wsent, char_list, job_labels, gender_label):
+def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=False, gender=False, sentiment=False):
     """
     Compute various metadata about characters in char_list
     :param sentences: list(dict)
@@ -36,58 +38,69 @@ def runMeta(book, sentences, wsent, char_list, job_labels, gender_label):
     N_CHARS = 10 # Num of chars to compute scores for -> default all
     predictors = ['count', 'proximity']
 
-    # Stores for predictor scores
-    # count_full_const = {}
-    # count_full_decr = {}
-    # count_expo_const = {}
-    # count_expo_decr = {}
-    # proximity_full_const = {}
-    # proximity_full_decr = {}
-    # proximity_expo_const = {}
-    # proximity_expo_decr = {}
+    if job:
+        # Compute predictions
+        p = predictors[0]
+        df_count_full_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True, predictor=p)
+        df_count_full_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=True, predictor=p)
+        df_count_expo_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=False, predictor=p)
+        df_count_expo_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=False, predictor=p)
 
-    # DataFrames for plotting
-    p = predictors[0]
-    df_count_full_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True, predictor=p)
-    df_count_full_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=True, predictor=p)
-    df_count_expo_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=False, predictor=p)
-    df_count_expo_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=False, predictor=p)
+        p = predictors[1]
+        df_proximity_full_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True, predictor=p)
+        df_proximity_full_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=True, predictor=p)
+        df_proximity_expo_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=False, predictor=p)
+        df_proximity_expo_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=False, predictor=p)
 
-    p = predictors[1]
-    df_proximity_full_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True, predictor=p)
-    df_proximity_full_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=True, predictor=p)
-    df_proximity_expo_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=False, predictor=p)
-    df_proximity_expo_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=False, predictor=p)
-
-    # PRINTING RESULTS
-    # print('===========LABELS=============')
-    # printStore(job_labels)
-    # print("")
-    # print('===========COUNT SCORE=============')
-    # printStore(full_count_score)
-    # print("")
-    # print('===========PROXIMITY SCORE=============')
-    # printStore(full_proximity_score)
-    # print("")
-    # print('===========SIMILARITY SCORE=============')
-    # plotJobScores(df_count_full_const)
-
-    df_count_full_const.to_csv(save_path + 'count_full_const.csv', encoding='utf-8')
-    df_count_full_decr.to_csv(save_path + 'count_full_decr.csv', encoding='utf-8')
-    df_count_expo_const.to_csv(save_path + 'count_expo_const.csv', encoding='utf-8')
-    df_count_expo_decr.to_csv(save_path + 'count_expo_decr.csv', encoding='utf-8')
-    df_proximity_full_const.to_csv(save_path + 'proximity_full_const.csv', encoding='utf-8')
-    df_proximity_full_decr.to_csv(save_path + 'proximity_full_decr.csv', encoding='utf-8')
-    df_proximity_expo_const.to_csv(save_path + 'proximity_expo_const.csv', encoding='utf-8')
-    df_proximity_expo_decr.to_csv(save_path + 'proximity_expo_decr.csv', encoding='utf-8')
+        # Save to csv
+        df_count_full_const.to_csv(save_path + 'count_full_const.csv', encoding='utf-8')
+        df_count_full_decr.to_csv(save_path + 'count_full_decr.csv', encoding='utf-8')
+        df_count_expo_const.to_csv(save_path + 'count_expo_const.csv', encoding='utf-8')
+        df_count_expo_decr.to_csv(save_path + 'count_expo_decr.csv', encoding='utf-8')
+        df_proximity_full_const.to_csv(save_path + 'proximity_full_const.csv', encoding='utf-8')
+        df_proximity_full_decr.to_csv(save_path + 'proximity_full_decr.csv', encoding='utf-8')
+        df_proximity_expo_const.to_csv(save_path + 'proximity_expo_const.csv', encoding='utf-8')
+        df_proximity_expo_decr.to_csv(save_path + 'proximity_expo_decr.csv', encoding='utf-8')
 
     ################## GENDER ###################
 
-    gender_nosolo = genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=False)
-    gender_solo = genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=True)
+    if gender:
+        # Compute predictions
+        gender_nosolo = genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=False)
+        gender_solo = genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=True)
 
-    gender_nosolo.to_csv(save_path + 'gender_nosolo.csv', encoding='utf-8')
-    gender_solo.to_csv(save_path + 'gender_solo.csv', encoding='utf-8')
+        # Save to csv
+        gender_nosolo.to_csv(save_path + 'gender_nosolo.csv', encoding='utf-8')
+        gender_solo.to_csv(save_path + 'gender_solo.csv', encoding='utf-8')
+
+    if sentiment:
+        sentimentPredictor(sentences, sents_by_char, char_list)
+
+
+def sentimentPredictor(sentences, sents_by_char, char_list):
+    full_char_text = []
+    char_polarity = {}
+    for s in sents_by_char:
+        sentiment_sent = [w if w != '<unknown>' else sentences[s]['words'][i] for i, w  in enumerate(sentences[s]['lemma'])]
+
+        # This limits the number of words submitted to the sentiment API
+        sentiment_sent = [w for i, w in enumerate(sentences[s]['words']) if     sentences[s]['tags'].split(':')[0] in ['NOM', 'ADJ', 'PUN', 'VER', 'ADV']]
+
+        full_char_text.append(sentiment_sent)
+
+    full_char_text = [item for sublist in full_char_text for item in sublist]
+    full_char_text = ' '.join(full_char_text)
+    curr_len = len(full_char_text)
+
+    # Max length supported by sentiment API
+    while curr_len > 80000:
+        new_text = full_char_text.split()
+        new_text.pop(randrange(len(new_text)))
+        full_char_text = ' '.join(new_text)
+        curr_len = len(full_char_text)
+
+    # TODO play with requests module to get polarity info on character
+
 
 
 def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=False):
@@ -227,6 +240,7 @@ def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True
                 span, interaction_count, len(char_list)]
 
     return df
+
 
 
 def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True, predictor='count'):

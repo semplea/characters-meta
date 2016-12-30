@@ -9,6 +9,7 @@ import getopt
 from computeMeta import runMeta
 import re
 from collections import defaultdict
+from unsupervisedCapture import runUnsupervised
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "b:", ["book="])
@@ -45,10 +46,6 @@ with codecs.open('../books-txt/books-txt/' + book + '.corr', 'r', 'utf8') as f:
                 if line[4] in ['m', 'f']:
                     gender_label[line[0]] = line[4]
 
-runMeta(book, sents, char_sents, char_list, job_labels, gender_label)
+# runMeta(book, sents, char_sents, char_list, job_labels, gender_label)
 
-# start=17
-# stop=18
-#
-# print([sents[i]['words'] for i in char_sents['MrsAouda'][start:stop]])
-# print([sents[i]['tags'] for i in char_sents['MrsAouda'][start:stop]])
+runUnsupervised(book, sents, char_sents, char_list)
