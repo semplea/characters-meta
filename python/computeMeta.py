@@ -10,6 +10,7 @@ import re
 import pickle
 from random import randrange
 import requests
+from ast import literal_eval
 
 
 def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=False, gender=False, sentiment=False):
@@ -78,28 +79,35 @@ def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=Fal
 
 
 def sentimentPredictor(sentences, sents_by_char, char_list):
-    full_char_text = []
-    char_polarity = {}
-    for s in sents_by_char:
-        sentiment_sent = [w if w != '<unknown>' else sentences[s]['words'][i] for i, w  in enumerate(sentences[s]['lemma'])]
+    char_polarity = defaultdict(lambda: (0.0, 0))
+    for character in char_list[:3]:
+        for s in sents_by_char[character]:
+            sentiment_sent = [w if w != '<unknown>' else sentences[s]['words'][i] for i, w  in enumerate(sentences[s]['lemma'])]
 
-        # This limits the number of words submitted to the sentiment API
-        sentiment_sent = [w for i, w in enumerate(sentences[s]['words']) if     sentences[s]['tags'].split(':')[0] in ['NOM', 'ADJ', 'PUN', 'VER', 'ADV']]
+            # This limits the number of words submitted to the sentiment API
+            # The assumption is that sentiment specific words are typically not prepositions, names, conjunctions etc.
+            sentiment_sent = [w for i, w in enumerate(sentences[s]['words']) if     sentences[s]['tags'][i].split(':')[0] in ['NOM', 'ADJ', 'PUN', 'VER', 'ADV']]
+            sentiment_sent = ' '.join(sentiment_sent)
+            r = requests.post('http://text-processing.com/api/sentiment/', data={'text':sentiment_sent, 'language':'french'})
 
-        full_char_text.append(sentiment_sent)
-
-    full_char_text = [item for sublist in full_char_text for item in sublist]
-    full_char_text = ' '.join(full_char_text)
-    curr_len = len(full_char_text)
-
-    # Max length supported by sentiment API
-    while curr_len > 80000:
-        new_text = full_char_text.split()
-        new_text.pop(randrange(len(new_text)))
-        full_char_text = ' '.join(new_text)
-        curr_len = len(full_char_text)
-
-    # TODO play with requests module to get polarity info on character
+            # make sure request got response
+            assert r.status_code == 200
+            # Get obect from byte object
+            res = literal_eval(r.content.decode('utf-8'))
+            label = res['label']
+            count = 0
+            probability = 0.0
+            if label == 'pos':
+                probability = res['probability'][label]
+                count = 1
+            elif label == 'neg':
+                probability = -res['probability'][label]
+                count = -1
+            new_tuple = (probability, count)
+            old_tuple = char_polarity[character]
+            char_polarity[character] = [sum(x) for x in zip(new_tuple, old_tuple)]
+        print character
+        print(char_polarity[character])
 
 
 
