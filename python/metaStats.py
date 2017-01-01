@@ -9,7 +9,7 @@ import getopt
 from computeMeta import runMeta
 import re
 from collections import defaultdict
-from unsupervisedCapture import runUnsupervised
+from LDACapture import runLDA
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "b:", ["book="])
@@ -46,6 +46,6 @@ with codecs.open('../books-txt/books-txt/' + book + '.corr', 'r', 'utf8') as f:
                 if line[4] in ['m', 'f']:
                     gender_label[line[0]] = line[4]
 
-runMeta(book, sents, char_sents, char_list, job_labels, gender_label, sentiment=True)
+# runMeta(book, sents, char_sents, char_list, job_labels, gender_label, sentiment=True)
 
-# runUnsupervised(book, sents, char_sents, char_list)
+runLDA(book, sents, char_sents, char_list, solo=True)

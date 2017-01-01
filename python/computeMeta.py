@@ -75,62 +75,106 @@ def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=Fal
         gender_solo.to_csv(save_path + 'gender_solo.csv', encoding='utf-8')
 
     if sentiment:
-        sentimentPredictor(sentences, sents_by_char, char_list)
+        # Compute predictions
+        sentiment_nosolo = sentimentPredictor(sentences, sents_by_char, char_list)
+        sentiment_solo = sentimentPredictor(sentences, sents_by_char, char_list, solo=True)
+
+        # Save to csv
+        sentiment_nosolo.to_csv(save_path + 'sentiment_nosolo.csv', encoding='utf-8')
+        sentiment_solo.to_csv(save_path + 'sentiement_solo.csv', encoding='utf-8')
 
 
-def sentimentPredictor(sentences, sents_by_char, char_list):
-    char_polarity = defaultdict(lambda: (0.0, 0))
-    for character in char_list[:3]:
-        for s in sents_by_char[character]:
+
+
+def sentimentPredictor(sentences, sents_by_char, char_list, solo=False):
+    """
+    Predict general sentiment for each character in char_list, and store in returned DataFrame
+    """
+    # Running takes a while (slow API calls?)
+    print 'Predicting sentiment with solo:', solo
+
+    # DataFrame for whole char_list
+    df = pd.DataFrame(columns=['Character', 'Label', 'Pos_count', 'Pos_prob', 'Neg_count', 'Neg_prob', 'Neut_count', 'Neut_prob'])
+
+    for idx, character in enumerate(char_list):
+        pos_count = 0
+        pos_probability = 0.0
+        neg_count = 0
+        neg_probability = 0.0
+        neut_count = 0
+        neut_probability = 0.0
+
+        char_sents = sents_by_char[character]
+
+        if solo:
+            char_sents, _ = getSoloSents(character, sents_by_char, char_list, idx)
+
+        # For each character compute aggregate of sentence predictions
+        for s in char_sents:
             sentiment_sent = [w if w != '<unknown>' else sentences[s]['words'][i] for i, w  in enumerate(sentences[s]['lemma'])]
 
             # This limits the number of words submitted to the sentiment API
             # The assumption is that sentiment specific words are typically not prepositions, names, conjunctions etc.
-            sentiment_sent = [w for i, w in enumerate(sentences[s]['words']) if     sentences[s]['tags'][i].split(':')[0] in ['NOM', 'ADJ', 'PUN', 'VER', 'ADV']]
+            sentiment_sent = [w for i, w in enumerate(sentences[s]['words']) if sentences[s]['tags'][i].split(':')[0] in ['NOM', 'ADJ', 'PUN', 'VER', 'ADV']]
+
+            # API request to get sentiment classification for string
             sentiment_sent = ' '.join(sentiment_sent)
             r = requests.post('http://text-processing.com/api/sentiment/', data={'text':sentiment_sent, 'language':'french'})
 
             # make sure request got response
             assert r.status_code == 200
+
             # Get obect from byte object
             res = literal_eval(r.content.decode('utf-8'))
+
+            # Aggregate scores
+            pos_probability += res['probability']['neg']
+            neg_probability += res['probability']['pos']
+            neut_probability += res['probability']['neutral']
+
+            # Increment pos and neg count
             label = res['label']
-            count = 0
-            probability = 0.0
             if label == 'pos':
-                probability = res['probability'][label]
-                count = 1
+                pos_count += 1
             elif label == 'neg':
-                probability = -res['probability'][label]
-                count = -1
-            new_tuple = (probability, count)
-            old_tuple = char_polarity[character]
-            char_polarity[character] = [sum(x) for x in zip(new_tuple, old_tuple)]
-        print character
-        print(char_polarity[character])
+                neg_count += 1
+            else:
+                neut_count += 1
+
+        label = 'pos' if pos_count > neg_count else 'neg'
+        # Save to DataFrame
+        row_idx = df.shape[0]
+        div = len(sents_by_char[character])
+        df.loc[row_idx] = [character, label,
+            pos_count, pos_probability,
+            neg_count, neg_probability,
+            neut_count, neut_probability]
+
+        print 'done {0}/{1}'.format(i, len(char_list))
+
+    return df
 
 
 
 def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=False):
-    # Try on full and exposition -> even more local? one of the first infos we get... window of first 2 mentions
-    # include factor for proximity
+    """
+    Get gender predictions for full list of chars. Return DataFrame
+    """
+    # TODO include factor for proximity
     window = 5
-    N_CHARS = 3
     df = pd.DataFrame(columns=['Character', 'Label', 'Title_score', 'Title_score_div',
                 'Title_in_name', 'Adj_score', 'Adj_score_div', 'Pron_score', 'Pron_score_div',
                 'Mention_count', 'Book_length', 'Span', 'Interaction_count', 'Char_count'])
-    # df.loc[row_idx] = [
-        # character, gender_label[character], title, title/len(char_sents),
-        # title_in_name, adj, adj/len(char_sents), pron, pron/len(char_sents),
-        # len(char_sents), len(sentences), abs(char_sents[0] - char_sents[-1]),
-        # abs(len(char_sents) - len(solo_sents)), len(char_list)]
+
     for i, character in enumerate(char_list):
         char_sents = sents_by_char[character]
 
+        # obvious titles for male and female characters
         f_title = [u'madame', u'mademoiselle', u'mme', u'mlle', u'm\xe8re', u'mrs', u'ms']
         m_title = [u'monsieur', u'm', u'mr', u'p\xe8re']
-        title = 0.0
-        title_in_name = 0.0
+        title = 0.0 # title score
+        title_in_name = 0.0 # title contained in compound name of char score
+
         # adj endings for feminin and masculin
         f_adj2 = [u've', u'ce', u'se']
         f_adj3 = [u'gue', u'sse', u'que', u'che', u'tte', u'\xe8te', u'\xe8re']
@@ -138,21 +182,17 @@ def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True
         m_adj1 = [u'g', u'f', u'x', u'c', u't']
         m_adj2 = [u'el', u'er', u'en', u'on']
         m_adj3 = [u'eur']
-        adj = 0.0
-        # pronoun score
-        pron = 0.0
-        # List of sents with only char in them
 
-        char_sents = set(char_sents)
-        others = char_list[:i] + char_list[i+1:]
-        other_sents = set()
-        for other in others:
-            other_sents = other_sents.union(set(sents_by_char[other]))
-        solo_sents = char_sents.difference(other_sents)
-        interaction_count = len(char_sents) - len(solo_sents)
+        adj = 0.0 # adjective score
+        pron = 0.0 # pronoun score
+
+        # Get list of sents with only char in them
+        # TODO is interaction_count necessary, and useful computed for both solo and non_solo?
+        solo_sents, interaction_count = getSoloSents(character, sents_by_char, char_list, i)
+
         if solo:
             char_sents = solo_sents
-        char_sents = list(char_sents)
+
 
         # Count pronouns
         for sent_idx in char_sents:
@@ -255,7 +295,6 @@ def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word
     """
     Computes predictions and scores for predictor with parameters decreasing and full
     """
-    total_sents = len(sentences)
     full_score = {}
     TOP_N_JOBS = 5
     df = pd.DataFrame(columns=['Character', 'Label_Guess', 'Similarity', 'Rank', 'Predictor', 'Mention_Count', 'Increment', 'Size'])
@@ -269,23 +308,24 @@ def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word
     for i, character in enumerate(char_list):
         char_sents = {}
         score = {}
-        # For each sentence in which chaarater is mentioned
+        # For each sentence in which character is mentioned
         char_sents = sents_by_char[character]
         if not full:
             # Get reduced sentence set
             # ASSUMPTION, either 10 or 10th of character mentions
             char_sents = char_sents[:int(max(10, len(char_sents)/10))]
 
-        for i in char_sents:
+        total_sents = len(char_sents)
+        for i, s in enumerate(char_sents):
             # Compute sentence window to look at
-            w_range = getWindow(sentences, i, window)
+            w_range = getWindow(sentences, s, window)
             sent_nostop = []
             sent_words = []
             sent_tags = []
-            for s in w_range:
-                sent_nostop += sentences[s]['nostop']
-                sent_words += sentences[s]['words']
-                sent_tags += sentences[s]['tags']
+            for w in w_range:
+                sent_nostop += sentences[w]['nostop']
+                sent_words += sentences[w]['words']
+                sent_tags += sentences[w]['tags']
             # If character is mentioned in sentence window, add to score
             if character in sent_nostop:
                 for job in job_list:
@@ -293,11 +333,13 @@ def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word
                         if predictor == 'count':
                             countPredict(score, decreasing, job, i, total_sents)
                         elif predictor == 'proximity':
-                            proxPredict(score, decreasing, character, job, job_count, sent_words)
+                            proxPredict(score, decreasing, job, i, total_sents, character, job_count, sent_words)
 
         if predictor == 'proximity':
             # divide by total matches to get mean proximity measure
             score = {k: float(v) / job_count[k] for k,v in score.items()}
+
+        # TODO need to normalize count score?
 
         full_score[character] = sortNTopByVal(score, TOP_N_JOBS, descending=True)
 
@@ -318,18 +360,35 @@ def countPredict(score, decreasing, job, pos, total_sents):
         # +1 for each mention
         # storeCount(count_score, job)
         # -log(i/n) for each mention
-        proportion = float(pos+1)/ total_sents
-        storeIncrement(score, job, -log(proportion))
+        w = -log(float(pos+1)/ total_sents)
+        storeIncrement(score, job, w)
 
 
-def proxPredict(score, decreasing, character, job, job_count, sent_words):
-    if not decreasing:
-        dist = abs(getIdxOfWord(sent_words, job) - getIdxOfWord(sent_words, character))
-        storeIncrement(score, job, dist)
-        job_count[job] += 1
-    # Decrease score increment as mentions progress
-    else:
-        pass
+def proxPredict(score, decreasing, job, pos, total_sents, character, job_count, sent_words):
+    w = 1
+    # Decrease the weight to score increment as mentions progress
+    if decreasing:
+        w = -log(float(pos+1) / total_sents)
+
+    dist = abs(getIdxOfWord(sent_words, job) - getIdxOfWord(sent_words, character))
+    storeIncrement(score, job, w*dist)
+    job_count[job] += w
+
+def getSoloSents(character, sents_by_char, char_list, char_idx):
+    """Get sentence indices with occurrences of ONLY given character"""
+    char_sents = set(sents_by_char[character])
+    others = char_list[:char_idx] + char_list[char_idx+1:]
+    other_sents = set()
+    # Union of sents of all other chars
+    for other in others:
+        other_sents = other_sents.union(set(sents_by_char[other]))
+
+    # Difference of character sentences with other sentences to get solo
+    solo_sents = char_sents.difference(other_sents)
+
+    interaction_count = len(char_sents) - len(solo_sents)
+
+    return list(solo_sents), interaction_count
 
 
 def get_df(df, character, preds, job_labels, word2vec_model, predictor, mentions, full, decreasing):
