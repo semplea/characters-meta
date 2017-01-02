@@ -4,14 +4,14 @@ from tools import *
 from metaPlot import *
 from math import log
 from collections import defaultdict
-from word_similarity import MyModel
+from wordSimilarity import MyModel
 import pandas as pd
 import re
 import pickle
 from random import randrange
 import requests
 from ast import literal_eval
-
+import random
 
 def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=False, gender=False, sentiment=False):
     """
@@ -75,18 +75,15 @@ def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=Fal
         gender_solo.to_csv(save_path + 'gender_solo.csv', encoding='utf-8')
 
     if sentiment:
-        # Compute predictions
-        sentiment_nosolo = sentimentPredictor(sentences, sents_by_char, char_list)
+        # # Compute predictions
+        # sentiment_nosolo = sentimentPredictor(sentences, sents_by_char, char_list)
+        # sentiment_nosolo.to_csv(save_path + 'sentiment_nosolo.csv', encoding='utf-8')
+
         sentiment_solo = sentimentPredictor(sentences, sents_by_char, char_list, solo=True)
-
-        # Save to csv
-        sentiment_nosolo.to_csv(save_path + 'sentiment_nosolo.csv', encoding='utf-8')
-        sentiment_solo.to_csv(save_path + 'sentiement_solo.csv', encoding='utf-8')
+        sentiment_solo.to_csv(save_path + 'sentiment_solo.csv', encoding='utf-8')
 
 
-
-
-def sentimentPredictor(sentences, sents_by_char, char_list, solo=False):
+def sentimentPredictor(sentences, sents_by_char, char_list, solo=False, reduced=True):
     """
     Predict general sentiment for each character in char_list, and store in returned DataFrame
     """
@@ -108,6 +105,13 @@ def sentimentPredictor(sentences, sents_by_char, char_list, solo=False):
 
         if solo:
             char_sents, _ = getSoloSents(character, sents_by_char, char_list, idx)
+
+        if reduced and len(char_sents) > 10:
+            # Get subset of sents
+            num_to_select = max(len(char_sents)/10, 10)
+            char_sents = sorted(random.sample(char_sents, num_to_select))
+
+
 
         # For each character compute aggregate of sentence predictions
         for s in char_sents:
@@ -141,7 +145,7 @@ def sentimentPredictor(sentences, sents_by_char, char_list, solo=False):
             else:
                 neut_count += 1
 
-        label = 'pos' if pos_count > neg_count else 'neg'
+        label = 'pos' if pos_count > neg_count else 'neg' if neg_count > pos_count else 'neutral'
         # Save to DataFrame
         row_idx = df.shape[0]
         div = len(sents_by_char[character])
@@ -150,7 +154,7 @@ def sentimentPredictor(sentences, sents_by_char, char_list, solo=False):
             neg_count, neg_probability,
             neut_count, neut_probability]
 
-        print 'done {0}/{1}'.format(i, len(char_list))
+        print 'done {0}/{1}'.format(idx+1, len(char_list))
 
     return df
 
@@ -337,7 +341,7 @@ def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word
 
         if predictor == 'proximity':
             # divide by total matches to get mean proximity measure
-            score = {k: float(v) / job_count[k] for k,v in score.items()}
+            score = {k: float(v) / job_count[k] for k,v in score.items() if job_count[k] > 0}
 
         # TODO need to normalize count score?
 
