@@ -46,6 +46,6 @@ with codecs.open('../books-txt/books-txt/' + book + '.corr', 'r', 'utf8') as f:
                 if line[4] in ['m', 'f']:
                     gender_label[line[0]] = line[4]
 
-runMeta(book, sents, char_sents, char_list, job_labels, gender_label, sentiment=True)
+runMeta(book, sents, char_sents, char_list, job_labels, gender_label, job=True)
 
 # runLDA(book, sents, char_sents, char_list, solo=True)
