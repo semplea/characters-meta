@@ -334,6 +334,10 @@ def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word
             if character in sent_nostop:
                 for job in job_list:
                     if unicode(job) in sent_nostop:
+                        # TODO Count and Proximity predictors in same score
+                        # divide count by num of mentions -> score between 1 and 0
+                        # divide proximity by...
+
                         if predictor == 'count':
                             countPredict(score, decreasing, job, i, total_sents)
                         elif predictor == 'proximity':
