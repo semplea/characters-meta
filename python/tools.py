@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import codecs
 import pickle
+import re
+import unicodedata
+
 
 def getScriptPath():
 	return "/home/alexis/Documents/EPFL/MS3/Project/python"
@@ -98,7 +101,7 @@ def sortNTopByVal(tosort, top, descending=False):
 
 def buildSentsByChar(chars, sents):
 	"""
-	DEPRECATED-NOT NEEDED ANY MORE
+	NOT NEEDED ANY MORE
 	Build map of chars to list of indices where characters occur in sents.
 	"""
 	char_sent_map = dict.fromkeys(chars, list())
@@ -160,3 +163,20 @@ def getWindow(lst, index, window):
     min_idx = index-window if index-window >= 0 else 0
     max_idx = index+window if index+window < len(lst) else len(lst)-1
     return range(min_idx, max_idx+1)
+
+def removeAccents(in_str):
+	in_str='émotions'
+	encoding = "utf-8"
+	if(is_ascii(in_str)):
+		in_str = in_str.decode(encoding)
+		in_str = unicodedata.normalize('NFKD', in_str)
+		in_str = in_str.encode('ASCII', 'ignore')
+	return in_str
+
+
+def is_ascii(mystr):
+	try:
+		mystr.decode('ascii')
+		return True
+	except UnicodeDecodeError:
+		return False

@@ -12,16 +12,29 @@ from collections import defaultdict
 from LDACapture import runLDA
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "b:", ["book="])
+    opts, args = getopt.getopt(sys.argv[1:], "b:jgsa", ["book=", "job", "gender", "sentiment", "all"])
 except getopt.GetoptError as err:
     print(err)
     sys.exit(2)
 
 book = ''
+job = False
+gender = False
+sentiment = False
 
 for opt, arg in opts:
     if opt in ("-b", "--book"):
         book = arg
+    if opt in ("-j", "--job"):
+        job = True
+    if opt in ("-g", "--gender"):
+        gender = True
+    if opt in ("-s", "--sentiment"):
+        sentiment = True
+    if opt in ("-a", "--all"):
+        job = True
+        gender = True
+        sentiment = True
 
 directory = '../books-txt/predicted-data/'
 
@@ -46,6 +59,6 @@ with codecs.open('../books-txt/books-txt/' + book + '.corr', 'r', 'utf8') as f:
                 if line[4] in ['m', 'f']:
                     gender_label[line[0]] = line[4]
 
-runMeta(book, sents, char_sents, char_list, job_labels, gender_label, job=True)
+runMeta(book, sents, char_sents, char_list, job_labels, gender_label, job=job, gender=gender, sentiment=sentiment)
 
 # runLDA(book, sents, char_sents, char_list, solo=True)

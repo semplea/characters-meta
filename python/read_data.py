@@ -3,13 +3,6 @@ import re
 import unicodedata
 import codecs
 
-def removeAccents(in_str):
-	encoding = "utf-8"
-	u_str = in_str.decode(encoding)
-	temp = unicodedata.normalize('NFKD', u_str)
-	norm_str = temp.encode('ASCII', 'ignore')
-	return norm_str
-
 
 def readData():
 	"""Read data and create sublists everytime a line starts with #

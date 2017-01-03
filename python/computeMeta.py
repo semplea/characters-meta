@@ -336,7 +336,8 @@ def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word
             prox_score = {k: -(float(v) / max_val - 1) for k,v in prox_score.items() if max_val > 0}
 
         # Combine here
-        w1 = w2 = 1.0
+        w1 = 5
+        w2 = 1
         merged = defaultdict(lambda: 0.0)
         for k,v in count_score.items():
             merged[k] = merged[k] + w1*v
@@ -369,7 +370,8 @@ def proxPredict(score, decreasing, job, pos, total_sents, character, job_count, 
     """
     Increment function for job count measure. Increase score dict with 'w' for 'job'.
     If decreasing=True, `w` is exponentially decreasing.
-    """    w = 1
+    """
+    w = 1
     if decreasing:
         w = -log(float(pos+1) / total_sents)
 
