@@ -4,7 +4,7 @@ from tools import *
 from metaPlot import *
 from math import log
 from collections import defaultdict
-from wordSimilarity import MyModel
+import wordSimilarity
 import pandas as pd
 import re
 import pickle
@@ -29,8 +29,8 @@ def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=Fal
     # classifier_data_dict has keys [u'tromper', u'nutrition', u'\xe9motions', u'dormir', u'raison', u'\xe9tats', u'vouloir', u'tuer', u'gu\xe9rir', u'relations', u'm\xe9tiers', u'salutations', u'soupir', u'pens\xe9e', u'parole', u'foi']
     classifier_data_dict = readData()
     sents_by_char = wsent
-    word2vec_model = MyModel()
-    char_list = list(reversed(char_list))
+    word2vec_model = wordSimilarity.MyModel()
+    char_list = list(reversed(char_list)) # by decreasing mention count
     save_path = 'metadata/' + book + '_'
 
     ################ JOBS #################
@@ -41,27 +41,16 @@ def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=Fal
 
     if job:
         # Compute predictions
-        p = predictors[0]
-        df_count_full_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True, predictor=p)
-        df_count_full_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=True, predictor=p)
-        df_count_expo_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=False, predictor=p)
-        df_count_expo_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=False, predictor=p)
-
-        p = predictors[1]
-        df_proximity_full_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True, predictor=p)
-        df_proximity_full_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=True, predictor=p)
-        df_proximity_expo_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=False, predictor=p)
-        df_proximity_expo_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=False, predictor=p)
+        df_job_full_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True)
+        df_job_full_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=True)
+        df_job_expo_const = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=False)
+        df_job_expo_decr = jobPredictor(sentences, wsent, char_list, job_labels, job_list, word2vec_model, decreasing=True, full=False)
 
         # Save to csv
-        df_count_full_const.to_csv(save_path + 'count_full_const.csv', encoding='utf-8')
-        df_count_full_decr.to_csv(save_path + 'count_full_decr.csv', encoding='utf-8')
-        df_count_expo_const.to_csv(save_path + 'count_expo_const.csv', encoding='utf-8')
-        df_count_expo_decr.to_csv(save_path + 'count_expo_decr.csv', encoding='utf-8')
-        df_proximity_full_const.to_csv(save_path + 'proximity_full_const.csv', encoding='utf-8')
-        df_proximity_full_decr.to_csv(save_path + 'proximity_full_decr.csv', encoding='utf-8')
-        df_proximity_expo_const.to_csv(save_path + 'proximity_expo_const.csv', encoding='utf-8')
-        df_proximity_expo_decr.to_csv(save_path + 'proximity_expo_decr.csv', encoding='utf-8')
+        df_job_full_const.to_csv(save_path + 'job_full_const.csv', encoding='utf-8')
+        df_job_full_decr.to_csv(save_path + 'job_full_decr.csv', encoding='utf-8')
+        df_job_expo_decr.to_csv(save_path + 'job_expo_decr.csv', encoding='utf-8')
+        df_job_expo_const.to_csv(save_path + 'job_expo_const.csv', encoding='utf-8')
 
     ################## GENDER ###################
 
@@ -111,8 +100,6 @@ def sentimentPredictor(sentences, sents_by_char, char_list, solo=False, reduced=
             num_to_select = max(len(char_sents)/10, 10)
             char_sents = sorted(random.sample(char_sents, num_to_select))
 
-
-
         # For each character compute aggregate of sentence predictions
         for s in char_sents:
             sentiment_sent = [w if w != '<unknown>' else sentences[s]['words'][i] for i, w  in enumerate(sentences[s]['lemma'])]
@@ -157,7 +144,6 @@ def sentimentPredictor(sentences, sents_by_char, char_list, solo=False, reduced=
         print 'done {0}/{1}'.format(idx+1, len(char_list))
 
     return df
-
 
 
 def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=False):
@@ -295,13 +281,13 @@ def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True
 
 
 
-def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True, predictor='count'):
+def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word2vec_model, decreasing=False, full=True):
     """
     Computes predictions and scores for predictor with parameters decreasing and full
     """
     full_score = {}
     TOP_N_JOBS = 5
-    df = pd.DataFrame(columns=['Character', 'Label_Guess', 'Similarity', 'Rank', 'Predictor', 'Mention_Count', 'Increment', 'Size'])
+    df = pd.DataFrame(columns=['Character', 'Label_Guess', 'Similarity', 'Rank', 'Mention_Count', 'Increment', 'Size'])
     job_count = defaultdict(int)
 
     # take neighbor sentence to the left and right to create window of sentences
@@ -311,7 +297,8 @@ def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word
     # For each character
     for i, character in enumerate(char_list):
         char_sents = {}
-        score = {}
+        count_score = defaultdict(lambda: 0.0)
+        prox_score = defaultdict(lambda: 0.0)
         # For each sentence in which character is mentioned
         char_sents = sents_by_char[character]
         if not full:
@@ -330,51 +317,61 @@ def jobPredictor(sentences, sents_by_char, char_list, job_labels, job_list, word
                 sent_nostop += sentences[w]['nostop']
                 sent_words += sentences[w]['words']
                 sent_tags += sentences[w]['tags']
+
             # If character is mentioned in sentence window, add to score
             if character in sent_nostop:
                 for job in job_list:
                     if unicode(job) in sent_nostop:
-                        # TODO Count and Proximity predictors in same score
-                        # divide count by num of mentions -> score between 1 and 0
-                        # divide proximity by...
+                        countPredict(count_score, decreasing, job, i, total_sents)
+                        proxPredict(prox_score, decreasing, job, i, total_sents, character, job_count, sent_words)
 
-                        if predictor == 'count':
-                            countPredict(score, decreasing, job, i, total_sents)
-                        elif predictor == 'proximity':
-                            proxPredict(score, decreasing, job, i, total_sents, character, job_count, sent_words)
+        # divide by total matches to get mean proximity measure
+        prox_score = {k: float(v) / job_count[k] for k,v in prox_score.items() if job_count[k] > 0}
 
-        if predictor == 'proximity':
-            # divide by total matches to get mean proximity measure
-            score = {k: float(v) / job_count[k] for k,v in score.items() if job_count[k] > 0}
+        # Normalize (and reverse, so that higher is better for proximity) for both scores
+        if count_score and prox_score:
+            max_val = max(count_score.values())
+            count_score = {k: float(v) / max_val for k,v in count_score.items() if max_val > 0}
+            max_val = max(prox_score.values())
+            prox_score = {k: -(float(v) / max_val - 1) for k,v in prox_score.items() if max_val > 0}
 
-        # TODO need to normalize count score?
-
-        full_score[character] = sortNTopByVal(score, TOP_N_JOBS, descending=True)
+        # Combine here
+        w1 = 5
+        w2 = 1
+        merged = defaultdict(lambda: 0.0)
+        for k,v in count_score.items():
+            merged[k] = merged[k] + w1*v
+        for k,v in prox_score.items():
+            merged[k] = merged[k] + w2*v
+        full_score[character] = sortNTopByVal(merged, TOP_N_JOBS, descending=True)
 
         # contains tuples with (rank_in_list, pred)
         preds = list(enumerate(full_score[character]))
 
-        df = get_df(df, character, preds, job_labels, word2vec_model, predictor, len(char_sents), full, decreasing)
+        df = getCountDF(df, character, preds, job_labels, word2vec_model, len(char_sents), full, decreasing)
     return df
 
 
 def countPredict(score, decreasing, job, pos, total_sents):
-    # COUNT SCORE
+    """
+    Increment function for job count measure. Increase score dict with `w` for `job`.
+    If decreasing=True, `w` is exponentially decreasing.
+    """
     # 1 per mention
-    if not decreasing:
-        storeIncrement(score, job, 1)
-    # Decrease score increment as mentions progress
-    else:
-        # +1 for each mention
-        # storeCount(count_score, job)
-        # -log(i/n) for each mention
+    # w exponentially decreasing if decreasing=True
+    w = 1
+    if decreasing:
         w = -log(float(pos+1)/ total_sents)
-        storeIncrement(score, job, w)
+
+    storeIncrement(score, job, w)
 
 
 def proxPredict(score, decreasing, job, pos, total_sents, character, job_count, sent_words):
+    """
+    Increment function for job count measure. Increase score dict with 'w' for 'job'.
+    If decreasing=True, `w` is exponentially decreasing.
+    """
     w = 1
-    # Decrease the weight to score increment as mentions progress
     if decreasing:
         w = -log(float(pos+1) / total_sents)
 
@@ -383,7 +380,10 @@ def proxPredict(score, decreasing, job, pos, total_sents, character, job_count, 
     job_count[job] += w
 
 def getSoloSents(character, sents_by_char, char_list, char_idx):
-    """Get sentence indices with occurrences of ONLY given character"""
+    """
+    Get sentence indices with occurrences of ONLY given character.
+    Return tuple with list of indices, difference count -> |nosolo| - |solo|
+    """
     char_sents = set(sents_by_char[character])
     others = char_list[:char_idx] + char_list[char_idx+1:]
     other_sents = set()
@@ -399,9 +399,9 @@ def getSoloSents(character, sents_by_char, char_list, char_idx):
     return list(solo_sents), interaction_count
 
 
-def get_df(df, character, preds, job_labels, word2vec_model, predictor, mentions, full, decreasing):
+def getCountDF(df, character, preds, job_labels, word2vec_model, mentions, full, decreasing):
     """
-    Generate vector similarities and return DataFrame
+    Generate vector similarities and return DataFrame for count score
     """
     if job_labels.get(character):
         for label in job_labels.get(character):
@@ -411,7 +411,7 @@ def get_df(df, character, preds, job_labels, word2vec_model, predictor, mentions
                 score = word2vec_model.compareWords(pred[0], label)
                 incr = 'constant' if not decreasing else 'decreasing'
                 size = 'full' if full else 'exposition'
-                df.loc[row_idx] = [character, (label, pred), score, rank, predictor, mentions, incr, size]
+                df.loc[row_idx] = [character, (label, pred), score, rank, mentions, incr, size]
 
     return df
 

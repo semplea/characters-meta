@@ -1,7 +1,6 @@
 # coding: utf-8
 
 from gensim.models import Word2Vec
-from read_data import removeAccents
 
 class MyModel:
     """
@@ -21,8 +20,3 @@ class MyModel:
             return self.model.similarity(w1 + '_n', w2 + '_n')
         except KeyError:
             return None
-
-
-
-# visualize with t-SNE http://homepage.tudelft.nl/19j49/t-SNE.html?
-# model['computer'] gives raw numpy vector of word 'computer'
