@@ -62,3 +62,11 @@ with codecs.open('../books-txt/books-txt/' + book + '.corr', 'r', 'utf8') as f:
 runMeta(book, sents, char_sents, char_list, job_labels, gender_label, job=job, gender=gender, sentiment=sentiment)
 
 # runLDA(book, sents, char_sents, char_list, solo=True)
+
+
+# for char in char_list:
+#     for s in char_sents[char]:
+#         zipped = zip(sents[s]['words'],sents[s]['tags'])
+#         for i, z in enumerate(zipped):
+#             if z[0].lower() == u'ma' and zipped[i+1][1] == 'NAM':
+#                 print(z, zipped[i+1])

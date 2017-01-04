@@ -1,6 +1,6 @@
 #!/usr/bin/bash
-python metaStats.py --book=lassommoir -j
-python metaStats.py --book=aubonheurdesdames -j
-python metaStats.py --book=letourdumondeen80jours -j
-python metaStats.py --book=candide -j
-python metaStats.py --book=madamebovary -j
+python metaStats.py --book=lassommoir -g
+python metaStats.py --book=aubonheurdesdames -g
+python metaStats.py --book=letourdumondeen80jours -g
+python metaStats.py --book=candide -g
+python metaStats.py --book=madamebovary -g
