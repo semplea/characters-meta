@@ -10,6 +10,7 @@ import codecs
 import pickle
 import re
 import unicodedata
+from ast import literal_eval
 
 
 def getScriptPath():
@@ -180,3 +181,15 @@ def is_ascii(mystr):
 		return True
 	except UnicodeDecodeError:
 		return False
+
+def camelSplit(name):
+	"""
+	Returns the string split if written in Camel case
+	"""
+	return re.sub('(?!^)([A-Z][a-z]+)', r' \1', name).split()
+
+def objFromByte(r):
+	try:
+		return literal_eval(r.content.decode('utf-8'))
+	except ValueError:
+		return None

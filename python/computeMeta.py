@@ -55,6 +55,9 @@ def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=Fal
 
     ################## GENDER ###################
 
+    # Load gender dict
+
+
     if gender:
         # Compute predictions
         gender_nosolo = genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=False)
@@ -77,6 +80,15 @@ def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=Fal
         # sentiment_solo = sentimentPredictor(sentences, sents_by_char, char_list, reduced=False, solo=True)
         # sentiment_solo.to_csv(save_path + 'sentiment_solo_top.csv', encoding='utf-8')
 
+    # Print stats
+    tokens = 0
+    job_len = len([item for item in job_labels.values() if item])
+    job_tok = len([item for sublist in job_labels.values() for item in sublist])
+    gender_len = len([item for item in gender_label.values() if item != '-'])
+    for s in sentences:
+        tokens += len(s['words'])
+    print('{}, {}, {}, ({}, {}), {}'.format(book, tokens, len(char_list), job_len, job_tok, gender_len))
+
 
 def sentimentPredictor(sentences, sents_by_char, char_list, solo=False, reduced=True):
     """
@@ -87,7 +99,7 @@ def sentimentPredictor(sentences, sents_by_char, char_list, solo=False, reduced=
 
     # DataFrame for whole char_list
     df = pd.DataFrame(columns=['Character', 'Label', 'Pos_count', 'Pos_prob', 'Neg_count', 'Neg_prob', 'Neut_count', 'Neut_prob'])
-    char_list = char_list[0:5]
+    char_list = char_list[0:4] # To get only subset
     for idx, character in enumerate(char_list):
         pos_count = 0
         pos_probability = 0.0
@@ -122,7 +134,8 @@ def sentimentPredictor(sentences, sents_by_char, char_list, solo=False, reduced=
             assert r.status_code == 200
 
             # Get obect from byte object
-            res = literal_eval(r.content.decode('utf-8'))
+            res = objFromByte(r)
+            # PMM4FBHNND
 
             # Aggregate scores
             pos_probability += res['probability']['neg']
@@ -158,39 +171,51 @@ def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True
     """
     window = 0
     df = pd.DataFrame(columns=['Character', 'Label', 'Prediction', 'Score', 'Title_score',
-            'Title_in_name', 'Adj_score', 'Pron_score', 'Art_score'])
+            'Title_in_name', 'Adj_score', 'Pron_score', 'Art_score', 'Name_score'])
+
+    # obvious titles for male and female characters
+    f_title = [u'madame', u'mademoiselle', u'mme', u'mlle', u'm\xe8re', u'mrs', u'ms']
+    m_title = [u'monsieur', u'm', u'mr', u'p\xe8re']
+
+    # adj endings for feminin and masculin
+    f_adj2 = [u've', u'ce', u'se']
+    f_adj3 = [u'gue', u'sse', u'que', u'che', u'tte', u'\xe8te', u'\xe8re']
+    f_adj4 = [u'elle', u'enne', u'onne', u'euse', u'cque']
+    m_adj1 = [u'g', u'f', u'x', u'c', u't']
+    m_adj2 = [u'el', u'er', u'en', u'on']
+    m_adj3 = [u'eur']
+
+    # articles
+    f_art = [u'la', u'cette', u'ma']
+    m_art = [u'le', u'ce', u'mon']
+    art_tags = ['DET:ART', 'PRO:DEM', 'DET:POS'] # use this for sanity check
 
     for i, character in enumerate(char_list):
         char_sents = sents_by_char[character]
 
-        # obvious titles for male and female characters
-        f_title = [u'madame', u'mademoiselle', u'mme', u'mlle', u'm\xe8re', u'mrs', u'ms']
-        m_title = [u'monsieur', u'm', u'mr', u'p\xe8re']
-        title = 0.0 # title score
-        title_in_name = 0.0 # title contained in compound name of char score
-
-        # adj endings for feminin and masculin
-        f_adj2 = [u've', u'ce', u'se']
-        f_adj3 = [u'gue', u'sse', u'que', u'che', u'tte', u'\xe8te', u'\xe8re']
-        f_adj4 = [u'elle', u'enne', u'onne', u'euse', u'cque']
-        m_adj1 = [u'g', u'f', u'x', u'c', u't']
-        m_adj2 = [u'el', u'er', u'en', u'on']
-        m_adj3 = [u'eur']
-
-        # articles
-        f_art = [u'la', u'cette', u'ma']
-        m_art = [u'le', u'ce', u'mon']
-        art_tags = ['DET:ART', 'PRO:DEM', 'DET:POS'] # use this for sanity check
-
         art = 0.0 # article score
         adj = 0.0 # adjective score
         pron = 0.0 # pronoun score
+        title = 0.0 # title score
+        title_in_name = 0.0 # title contained in compound name of char score
+        name = 0.0
 
-        # Get list of sents with only char in them
-        solo_sents = getSoloSents(character, sents_by_char, char_list, i)
+        # First name
+        split = camelSplit(character)
+        # Limited to 1000 requests per day
+        r = requests.get('https://api.genderize.io/', params={'name':split[0]})
+        if r.status_code != 200:
+            print(r.content)
+        res = objFromByte(r)
+        if res:
+            if res['gender'] == 'female':
+                name = res['probability']
+            elif res['gender'] == 'male':
+                name = -res['probability']
 
         if solo:
-            char_sents = solo_sents
+            # Get list of sents with only char in them
+            char_sents = getSoloSents(character, sents_by_char, char_list, i)
 
         # Count pronouns
         for sent_idx in char_sents:
@@ -228,7 +253,7 @@ def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True
             # Check in name of character as well, if title included
             # Not indicative would be very unlikely
             # Almost cheat feature
-            camel_split = re.sub('(?!^)([A-Z][a-z]+)', r' \1', character).split()
+            camel_split = camelSplit(character)
             if len(camel_split) > 1 and camel_split[0].lower() in f_title:
                 title_in_name += 1.0
             elif len(camel_split) > 1 and camel_split[0].lower() in m_title:
@@ -265,21 +290,20 @@ def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True
 
         ### DECIDE
         # Positive score -> f, negative -> m
-        w1 = w2 = w3 = w4 = w5 = 1.0
-        # w1 = 0.3
-        # w2 = 0.8
-        # w3 = 1.5
-        # w4 = 2.0
-        # w5 = 1.2
+        w1 = w2 = w3 = w4 = w5 = w6 = 1.0
         if weighted:
             # trained on nosolo
-            # [w1, w2, w3, w4, w5] = [2, 3, 1, 1, 2]
+            # [w1, w2, w3, w4, w5, w6] = [2, 3, 1, 1, 2, 2]
             # trained on solo
-            [w1, w2, w3, w4, w5] = [2, 3, 1, 1, 3]
+            [w1, w2, w3, w4, w5, w6] = [2, 3, 1, 1, 3, 2]
 
         res = '' # If empty, undecidable
-        score = w1 * title + w2 * title_in_name + w3 * adj + w4 * pron + w5 * art
-        if score > 0:
+        score = w1 * title + w2 * title_in_name + w3 * adj + w4 * pron + w5 * art + w6 * name
+        if name >= 0.95:
+            res = 'f'
+        elif name <= -0.95:
+            res = 'm'
+        elif score > 0:
             res = 'f'
         elif score < 0:
             res = 'm'
@@ -294,7 +318,7 @@ def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True
                 div = len(char_sents)
                 span = abs(char_sents[0] - char_sents[-1])
             row_idx = df.shape[0]
-            df.loc[row_idx] = [character, gender_label[character], res, score, title/div, title_in_name/div, adj/div, pron/div, art/div]
+            df.loc[row_idx] = [character, gender_label[character], res, score, title/div, title_in_name/div, adj/div, pron/div, art/div, name]
 
     return df
 
@@ -412,7 +436,6 @@ def getSoloSents(character, sents_by_char, char_list, char_idx):
 
     # Difference of character sentences with other sentences to get solo
     solo_sents = char_sents.difference(other_sents)
-
 
     return list(solo_sents)
 

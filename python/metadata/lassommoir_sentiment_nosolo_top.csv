@@ -1,0 +1,5 @@
+,Character,Label,Pos_count,Pos_prob,Neg_count,Neg_prob,Neut_count,Neut_prob
+0,Henriette,pos,1.0,2.025,0.0,3.975,5.0,4.33
+1,Auguste,pos,1.0,2.75,0.0,3.25,5.0,5.25
+2,Hardi,pos,1.0,2.325,0.0,2.675,4.0,4.2
+3,Baquet,pos,2.0,2.0725,0.0,2.9275,3.0,3.225

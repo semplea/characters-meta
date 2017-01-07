@@ -1,0 +1,5 @@
+,Character,Label,Pos_count,Pos_prob,Neg_count,Neg_prob,Neut_count,Neut_prob
+0,Tellier,neutral,0.0,2.514,0.0,2.486,5.0,4.57
+1,Lempereur,neutral,0.0,2.4125,0.0,2.5875,5.0,4.525
+2,Langlois,neutral,0.0,2.0975,0.0,2.9025,5.0,4.15
+3,Lagardy,pos,1.0,2.19083333333,0.0,2.80916666667,4.0,3.48333333333
