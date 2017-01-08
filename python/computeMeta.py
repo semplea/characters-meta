@@ -1,7 +1,6 @@
 # coding: utf8
 from read_data import readData
 from tools import *
-from metaPlot import *
 from math import log
 from collections import defaultdict
 import wordSimilarity
@@ -79,8 +78,9 @@ def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=Fal
         sentiment_nosolo = sentimentPredictor(sentences, sents_by_char, char_list, reduced=False)
         sentiment_nosolo.to_csv(save_path + 'sentiment_nosolo_top.csv', encoding='utf-8')
 
-        # sentiment_solo = sentimentPredictor(sentences, sents_by_char, char_list, reduced=False, solo=True)
-        # sentiment_solo.to_csv(save_path + 'sentiment_solo_top.csv', encoding='utf-8')
+        sentiment_solo = sentimentPredictor(sentences, sents_by_char, char_list, reduced=False, solo=True)
+        sentiment_solo.to_csv(save_path + 'sentiment_solo_top.csv', encoding='utf-8')
+        # sentimentPredictor(book, sentences, sents_by_char, char_list, reduced=False, write=True)
 
     # Print stats
     tokens = 0
@@ -92,7 +92,7 @@ def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=Fal
     print('{}, {}, {}, ({}, {}), {}'.format(book, tokens, len(char_list), job_len, job_tok, gender_len))
 
 
-def sentimentPredictor(sentences, sents_by_char, char_list, solo=False, reduced=True):
+def sentimentPredictor(sentences, sents_by_char, char_list, solo=False, reduced=True, write=False):
     """
     Predict general sentiment for each character in char_list, and store in returned DataFrame
     """
@@ -130,6 +130,11 @@ def sentimentPredictor(sentences, sents_by_char, char_list, solo=False, reduced=
 
             # API request to get sentiment classification for string
             sentiment_sent = ' '.join(sentiment_sent)
+
+            if write:
+                with open(book + '/' + character + '.txt', 'a+') as f:
+                    f.write(codecs.encode(sentiment_sent + '\n', 'utf-8'))
+
             r = requests.post('http://text-processing.com/api/sentiment/', data={'text':sentiment_sent, 'language':'french'})
 
             # make sure request got response
