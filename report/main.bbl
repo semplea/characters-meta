@@ -1,0 +1,103 @@
+\begin{thebibliography}{10}
+
+\bibitem{bamman2014bayesian}
+David Bamman, Ted Underwood, and Noah~A Smith.
+\newblock A bayesian mixed effects model of literary character.
+\newblock In {\em ACL (1)}, pages 370--379, 2014.
+
+\bibitem{baroni2009wacky}
+Marco Baroni, Silvia Bernardini, Adriano Ferraresi, and Eros Zanchetta.
+\newblock The wacky wide web: a collection of very large linguistically
+  processed web-crawled corpora.
+\newblock {\em Language resources and evaluation}, 43(3):209--226, 2009.
+
+\bibitem{blei2003latent}
+David~M Blei, Andrew~Y Ng, and Michael~I Jordan.
+\newblock Latent dirichlet allocation.
+\newblock {\em Journal of machine Learning research}, 3(Jan):993--1022, 2003.
+
+\bibitem{chambers2013event}
+Nathanael Chambers.
+\newblock Event schema induction with a probabilistic entity-driven model.
+\newblock In {\em EMNLP}, volume~13, pages 1797--1807, 2013.
+
+\bibitem{cheung2013probabilistic}
+Jackie Chi~Kit Cheung, Hoifung Poon, and Lucy Vanderwende.
+\newblock Probabilistic frame induction.
+\newblock {\em arXiv preprint arXiv:1302.4813}, 2013.
+
+\bibitem{elson2010extracting}
+David~K Elson, Nicholas Dames, and Kathleen~R McKeown.
+\newblock Extracting social networks from literary fiction.
+\newblock In {\em Proceedings of the 48th annual meeting of the association for
+  computational linguistics}, pages 138--147. Association for Computational
+  Linguistics, 2010.
+
+\bibitem{flekova2015personality}
+Lucie Flekova and Iryna Gurevych.
+\newblock Personality profiling of fictional characters using sense-level links
+  between lexical resources.
+\newblock In {\em Proceedings of Empirical Methods in Natural Language
+  Processing}, 2015.
+
+\bibitem{groza2015information}
+Adrian Groza and Lidia Corde.
+\newblock Information retrieval in falktales using natural language processing.
+\newblock In {\em Intelligent Computer Communication and Processing (ICCP),
+  2015 IEEE International Conference on}, pages 59--66. IEEE, 2015.
+
+\bibitem{kokkinakis2011character}
+Dimitrios Kokkinakis and Mats Malm.
+\newblock Character profiling in 19th century fiction.
+\newblock {\em Language Technologies for Digital Humanities and Cultural
+  Heritage}, page~70, 2011.
+
+\bibitem{mccrae1992introduction}
+Robert~R McCrae and Oliver~P John.
+\newblock An introduction to the five-factor model and its applications.
+\newblock {\em Journal of personality}, 60(2):175--215, 1992.
+
+\bibitem{mikolov2013efficient}
+Tomas Mikolov, Kai Chen, Greg Corrado, and Jeffrey Dean.
+\newblock Efficient estimation of word representations in vector space.
+\newblock {\em arXiv preprint arXiv:1301.3781}, 2013.
+
+\bibitem{mikolov2013distributed}
+Tomas Mikolov, Ilya Sutskever, Kai Chen, Greg~S Corrado, and Jeff Dean.
+\newblock Distributed representations of words and phrases and their
+  compositionality.
+\newblock In {\em Advances in neural information processing systems}, pages
+  3111--3119, 2013.
+
+\bibitem{perkins2010textclass}
+Jacob Perkins.
+\newblock Text classification for sentiment analysis - naive bayes classifier.
+\newblock
+  \href{http://streamhacker.com/2010/05/10/text-classification-sentiment-analysis-naive-bayes-classifier/}{StreamHacker},
+  2010.
+\newblock Accessed: 2016-12-01.
+
+\bibitem{rochat2015character}
+Yannick Rochat.
+\newblock Character network analysis of emile zola’s les rougon-macquart.
+\newblock In {\em Digital Humanities 2015}, number EPFL-CONF-210573, 2015.
+
+\bibitem{schafer2007integrating}
+Ulrich Sch{\"a}fer.
+\newblock {\em Integrating deep and shallow natural language processing
+  components: representations and hybrid architectures}.
+\newblock PhD thesis, Universit{\"a}tsbibliothek, 2007.
+
+\bibitem{schmid2013probabilistic}
+Helmut Schmid.
+\newblock Probabilistic part-ofispeech tagging using decision trees.
+\newblock In {\em New methods in language processing}, page 154. Routledge,
+  2013.
+
+\bibitem{valls2014toward}
+Josep Valls-Vargas, Santiago Ontan{\'o}n, and Jichen Zhu.
+\newblock Toward automatic character identification in unannotated narrative
+  text.
+\newblock In {\em Seventh Intelligent Narrative Technologies Workshop}, 2014.
+
+\end{thebibliography}

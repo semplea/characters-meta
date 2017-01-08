@@ -101,7 +101,7 @@ def sentimentPredictor(sentences, sents_by_char, char_list, solo=False, reduced=
 
     # DataFrame for whole char_list
     df = pd.DataFrame(columns=['Character', 'Label', 'Pos_count', 'Pos_prob', 'Neg_count', 'Neg_prob', 'Neut_count', 'Neut_prob'])
-    char_list = char_list[0:4] # To get only subset
+    char_list = char_list[0:5] # To get only subset
     for idx, character in enumerate(char_list):
         pos_count = 0
         pos_probability = 0.0
@@ -133,11 +133,11 @@ def sentimentPredictor(sentences, sents_by_char, char_list, solo=False, reduced=
             r = requests.post('http://text-processing.com/api/sentiment/', data={'text':sentiment_sent, 'language':'french'})
 
             # make sure request got response
-            assert r.status_code == 200
+            if r.status_code != 200:
+                print(r.content)
 
             # Get obect from byte object
             res = objFromByte(r)
-            # PMM4FBHNND
 
             # Aggregate scores
             pos_probability += res['probability']['neg']

@@ -15,10 +15,16 @@ For a given book, we define a character $c_i$, such that $c_i \in \mathcal{C}$, 
 The term \textit{window} in hypothesis 1. describes a batch of either words or sentences, taken before and after a character occurrence. So for a given window wing size $w$, and the $k$th occurrence over the whole book of $c_i \in \mathcal{C}$  in sentence $s_j$, we have a window $W_{\mu^i_k}$, s.t. 
 
 \begin{equation}
-W_{\mu^i_k} = [s_{j-w}, s_{j-w+1}, ...,  s_{j-1}, s_{j}, s_{j+1}, ..., s_{j+w-1}, , s_{j+w}]
+W_{\mu^i_k} = [s_{j-w}, s_{j-w+1}, ...,  s_{j-1}, s_{j}, s_{j+1}, ..., s_{j+w-1}, s_{j+w}]
 \end{equation}
 
-where $\mu^i_k$ is the $k$th occurrence of $c_i$, and $0 \leq k \leq L_i$, so $c_i$ has a total of $L_i$ occurrences in the book. In this way, a window is of size $2w + 1$. Note that the inferior and superior bounds for a window are $s_0$ and $s_m$, so the leftmost sentence in any case is actually $s_{\min(0, j-w)}$, and the rightmost $s_{\max(m, j+w)}$. 
+where $\mu^i_k$ is the $k$th occurrence of $c_i$, and $0 \leq k \leq L_i$, so $c_i$ has a total of $L_i$ occurrences in the book. In this way, a window is of size $2w + 1$. Note that the inferior and superior bounds for a window are $s_0$ and $s_m$, so the leftmost sentence in any case is actually $s_{\min(0, j-w)}$, and the rightmost $s_{\max(m, j+w)}$. An example is given for character \textit{Phileas Fogg} in \cref{fig:window}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{fig/window.png}
+\caption{Window example, with w=4. Note, in  this sentence all tokens are taken for consideration, whereas in practice we worked with sentences without stopwords, and more in some cases (e.g. only specific PoS tags). We also use words to determine the window. In practice, this could also be whole sentences instead.}
+\label{fig:window}
+\end{figure}
 
 For character $c_i$, let its document $D^{c_i}$ be the collection of all the windows with an occurrence of $c_i$ at their center. This whole description can be taken analogously for windows of words instead of sentences. We experimented with different window parameters for the various predictors described below. 
 
@@ -39,14 +45,14 @@ D^{c_i}_{filt} = D^{c_i} \backslash \bigcup_j D^{c_j}
 \end{equation}
 where $i \neq j$. 
 
-Of course the hypotheses discussed are not conflicting in nature and can be implemented alongside each other, and were tested as such for our predictors. With this setup, we went on to try different approaches to extracting metadata for individual or a whole collection of characters in a book.
+Of course the hypotheses discussed are not conflicting in nature and can be applied alongside each other, and were tested as such for our predictors. With this setup, we went on to try different approaches to extracting metadata for individual or a whole collection of characters in a book.
 
 \subsection{Extraction by LDA}
-As a preliminary exploration of the characterization of an entity in a book, we applied an latent dirichlet allocation (LDA) \cite{blei2003latent} on the document of the entity. By this generative probabilistic model, we get a requested amount of topics, each topic being a distribution over the words of the document. The implementation discussed below can be found in the \texttt{LDACapture.py} file.
+As a preliminary exploration of the characterization of an entity in a book, we applied a latent dirichlet allocation (LDA) \cite{blei2003latent} on the document of the entity. By this generative probabilistic model, we get a requested amount of topics, each topic being a distribution over the words of the document. The implementation discussed below can be found in the \texttt{LDACapture.py} file.
 
 Since this is basically an unsupervised way of extracting data, we get results that are not specifically pertinent to characterization, but more a broad indicator of the whole narrative (local to the given character). However, some of the topics were found to be pertinent. This is mainly in cases where the metadata considered plays a recurrent and central part in the narrative.
 
-To extract them, we first focused on a particular aspect we wanted to observe. For instance, the model is more likely to capture information about a profession if it is provided only with nouns and proper nouns, since this filters out 'noise' irrelevant to this question (adverbs, adjectives, etc... verbs could be indicative, but there are many more generic ones that have a higher probability within any standard text). This filtering is achieved with the probabilistic tagging provided by TreeTagger. Additionally, we work exclusively with lemmas (also, provided by TreeTagger), when they are known, in order to minimize morphological variations.
+To extract them, we first focused on a particular aspect we wanted to observe. For instance, the model is more likely to capture information about a profession if it is provided only with common and proper nouns, since this filters out 'noise' irrelevant to this question (adverbs, adjectives, etc... verbs could be indicative, but there are many more generic ones that have a higher probability within any standard text). This filtering is achieved with the probabilistic tagging provided by TreeTagger. Additionally, we work exclusively with lemmas (also, provided by TreeTagger), when they are known, in order to minimize morphological variations.
 
 If we take an example from \textit{Au Bonheur des Dames}, and look at the topics generated for the main character Denise, a saleswoman in a clothing store, by providing the LDA model with sentences containing only occurrences of the token `Denise', it's obvious that the concept of shops is indicated (words like \textit{magasin}, \textit{boutique}, \textit{vêtement}, \textit{rayon}.
 
@@ -72,18 +78,17 @@ Topic 2 - 0.080*"heure" + 0.080*"rue" + 0.064*"maître" + 0.049*"ville" + 0.049*
 Topic 3 - 0.248*"maître" + 0.059*"air" + 0.040*"paquebot" + 0.040*"hong-kong" + 0.040*"départ" + 0.040*"bord" + 0.040*"bonheur" + 0.021*"heure" + 0.021*"rangoon" + 0.021*"jusqu"
 \end{lstlisting}
 
-where the theme of travel is obviously dominant. Only week indications of his profession can be found, in the word `ma\^itre' (master), recurring in several topics. 
+where the theme of travel is obviously dominant. Only weak indications of his profession can be found, in the word `ma\^itre' (master), recurring in several topics. 
 
 After these disappointing results, we try the approach of writing specific predictors for metadata categories.
 
 \subsection{Metadata-specific predictors}
-For the sake of variety, we implemented three different predictors that focus on specific aspects of a character's metadata, i.e. profession, gender and sentiment. In this way we look at aspects from a character's \textit{activity}, \textit{person} and \textit{psychological affect}. In the implementations of these predictors, three different main methods are used that cover a good spread of conceivable additional predictors, i.e. ad-hoc lexicon-based and linguistic-rule-based, or using external tools.
+We implemented three different predictors that focus on specific aspects of a character's metadata, i.e. profession, gender and sentiment. In this way we look at aspects from a character's \textit{activity}, \textit{person} and \textit{psychological affect}. In the implementations of these predictors, three different main methods are used that cover a good spread of conceivable additional predictors, i.e. ad-hoc lexicon-based and linguistic-rule-based, or using external tools.
 
 The implementations discussed below can be found in the \texttt{computeMeta.py} file.
 
-
 \subsubsection{Profession} \label{sssec:profession}
-For predicting the profession of a character $c_i$, we utilized an external corpus \todo{from where?} of approximately 2600 known professions in French. Let $p_k \in \mathcal{P}$ be the $k$th  profession in the list. 
+For predicting the profession of a character $c_i$, we utilized an external corpus \footnote{A list of approximately 2600 masculine and feminine profession titles at \href{http://www.vd.ch/guide-typo3/le-texte/rediger-pour-le-web/redaction-egalitaire/2000-noms-au-masculin-et-au-feminin}{http://www.vd.ch/guide-typo3/le-texte/rediger-pour-le-web/redaction-egalitaire/2000-noms-au-masculin-et-au-feminin}} of known professions in French. Let $p_k \in \mathcal{P}$ be the $k$th  profession in the list. 
 
 Our approach is then split along two different measures. On the one hand, we look at the co-occurence \textbf{count}, i.e. 
 \begin{equation}
@@ -91,7 +96,7 @@ count_{c_i, p_k} = \sum_j \mathbb{I}^{c_i}_j \mathbb{I}^{p_k}_j
 \end{equation}
 where the indicator functions $\mathbb{I}_j = 1$ if $c_i$ (resp. $p_k$) occurs in sentence (or window) $j$. This is computed $\forall c_i \in \mathcal{C}, \forall p_k \in \mathcal{P}$, and kept in a dictionary of $c_j \rightarrow [p_0, p_1, ...]$. The job with the highest count score is taken as the winner. 
 
-On the other hand, we look at the mean \textbf{proximity} measure, so for given $c_i$ and $p_k$, get the mean distance between the two within a window. See \cref{alg:proximity} for a sketch of the implementation (note, this gives an idea of the implementation for the count score as well).
+On the other hand, we look at the mean \textbf{proximity} measure, so for given $c_i$ and $p_k$, get the mean distance between the two within a window. See \cref{alg:proximity} for a sketch of the implementation. 
 
 \begin{algorithm} 
   \KwData{$charWindows, jobList, jobCount, char$}
@@ -114,11 +119,15 @@ On the other hand, we look at the mean \textbf{proximity} measure, so for given 
 
 As before, this is computed $\forall c_i \in \mathcal{C}, \forall p_k \in \mathcal{P}$ and stored in a dictionary. The job with the lowest mean proximity score is taken as the winner.
 
+Note, this gives an idea of the implementation for the count score as well, and can be applied to other aspects of a $c_i$'s metadata (e.g. family ties, nationality). The process needs a collection of keywords to extract from a given $D^{c_i}$, in the case of \cref{alg:proximity}, the \textit{jobList}, and a scheme for aggregating the occurrences into a score for each keyword, which is done here by the \textit{distance} function.
+
 We additionally implemented an \textbf{aggregate predictor}, combining both proximity and count measures, where we add their weighted normalized scores together. The weights were chosen to approximate best results.
-\subsubsection{Gender}
+
+
+\subsubsection{Gender} \label{sssec:gender}
 In order to predict the gender of a character, we tried to capture different lexical, linguistic and morphological aspects of a window surrounding that character. In turn, we captured the number of masculine and feminine pronouns in the window, the number of adjectives with feminine or masculine form, the number of obvious titles linked to the character. These scores were then combined to provide the best possible prediction.
 
-\paragraph{Pronoun} We captured the masculine and feminine pronouns (`il', `elle') in the window containing $c_i$ (and for the words with the relevant PoS tag: \texttt{PRO:PER}), and aggregated the captures by adding $+1$ for each feminine, and $-1$ for each masculine occurrence.
+\paragraph{Pronoun} We captured the masculine and feminine pronouns (`il', `elle') in the window containing $c_i$ (and for the words with the relevant PoS tag: \texttt{PRO:PER}), and aggregated the captures by adding $+1$ for each feminine, and $-1$ for each masculine occurrence. Note that this can be considered problematic due to the use of the masculine pronoun for the impersonal case as well (in english `it'), e.g. \textit{`il est clair que...'}. In practice, even with this strong assumption, the results weren't too biased towards predicting male characters.
 
 \paragraph{Adjective} Lists of typical masculine and feminine adjective endings were compiled (e.g. \texttt{[`el', `er', `en', `on', ...]}, and \texttt{[`elle', `enne', `onne', `euse', ...]} respectively. For words with the relevant PoS tag (\texttt{ADJ}), we again aggregated these captures by a similar method as above.
 
@@ -126,8 +135,10 @@ In order to predict the gender of a character, we tried to capture different lex
 
 Given the formal nature style of many of the texts we deal with in this work, there are plenty of \textbf{titles} used to address the characters. On top of this, the set of characters for a book was provided with compounded names, i.e. `MrFogg', `MrsAouda'. This allowed us, with compiled lists of feminine and masculine titles (\texttt{[`madame', `mademoiselle', `mme', ...]}), to look for both a title in the compounded name, and in the word directly preceding the occurrence of the character.
 
-Additionnally, we kept score of any feminine or masculine pronouns or articles directly preceding the character occurrence, i.e. `le' or `la', `ce' or `cette', `mon' or `ma'. 
+Additionnally, we keep score of any feminine or masculine pronouns or articles directly preceding the character occurrence, i.e. `le' or `la', `ce' or `cette', `mon' or `ma'. This aims to capture affectionate and informal ways of address (e.g. `ma Denise').
 
+\paragraph{Character name}
+We used a gender determination service \footnote{\href{https://genderize.io/}{https://genderize.io/}. It is built utilizing data from social network profiles across the globe. For a given name, a request returns a gender (if name is known), with a certainty factor.} on the (first) names of characters. For certainty factors above a certain threshold (i.e. $> 0.95$) we used a greedy scheme that would attribute the gender label directly to the result of the character, since this proved to work at a very low error rate. For anything below the threshold, we used a weighted contribution to the overall score.
 \vspace*{1em}
 
 In order to best combine the scores of these methods, we wanted to approximate good weights for each. We did this by a logistic regression on our labeled data set, using the different scores computed as features, and used these approximate weights for the model. Seeing as we have very few data points labeled, this is by no means a sufficient method, but it gives us an idea of the importance of each `feature'.
