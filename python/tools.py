@@ -166,7 +166,6 @@ def getWindow(lst, index, window):
     return range(min_idx, max_idx+1)
 
 def removeAccents(in_str):
-	in_str='émotions'
 	encoding = "utf-8"
 	if(is_ascii(in_str)):
 		in_str = in_str.decode(encoding)

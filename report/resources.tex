@@ -1,0 +1,37 @@
+\section{Resources}
+Here we present the main external resources that were used to perform this work.
+
+\subsection{Data} \label{ssec:data}
+The books we worked with were all processed in the form of a simple text file, provided by Project Gutenberg. Each file was then processed so that each chapter was written onto a single line.
+
+We worked extensively with previous work done by Cyril Bornet around character and location recognition, focused on the same works of literature \footnote{A set of novel analysis tools \href{https://github.com/dhlab-epfl/3n-tools}{on GitHub: https://github.com/dhlab-epfl/3n-tools}}. So on top of the raw books, we were able to assume and work with a good set of the characters within a novel, provided in a deterministic list.
+
+In order to measure the efficiency of our model, we also annotated by a small number of books with information about gender and professional activity. Since we would be focusing on very limited data, it was important to pick a selection of books representative of the question we wanted to answer, but also allowing that question a certain scope to explore possibilities. We decided to pick books based on the following criteria:
+\begin{itemize}
+\item book contains varied character types and relations 
+\item there are explicit metadata about a majority of the characters
+\item the full selection will be composed of different authorial styles 
+\end{itemize}
+
+The books we ended up annotating and working more closely with for the evaluation of our work are \textit{Au Bonheur des Dames} (ABDD) and \textit{L'Assommoir} (LASS), by Émile Zola, \textit{Madame Bovary} (MBOV), by Gustave Flaubert, \textit{Le Tour du Monde en quatre-ving jours} (LTDM), by Jules Verne, and \textit{Candide} (CAND), by Voltaire. More information is given in \cref{tab:books}. 
+
+\begin{table}
+\centering
+\begin{tabular}{|l||*{4}{c|} }
+\hline
+Book & Tokens & Characters & Job labels & Gender labels \\ \hline \hline
+LTDM & 75674 & 25 & 23 (34) & 23 \\ \hline
+ABDD & 174635 & 58 & 41 (59) & 57 \\ \hline
+LASS & 173154 & 45 & 23 (31) & 43 \\ \hline
+MBOV & 131883 & 46 & 27 (39) & 46 \\ \hline
+CAND & 36015 & 11 & 8 (11) & 13 \\ \hline \hline
+\bf Total & 591361 & 185 & 122 (174) & 182 \\ \hline
+\end{tabular}
+\caption{Information given per annotated book (abbreviated titles). In order of the columns, we have the total number of tokens in the book, the number known characters, number of job-labeled characters (total number of jobs identified as valid), number of gender-labeled characters.}
+\label{tab:books}
+\end{table}
+
+\subsection{Tools}
+The main technical tools we worked with are NLP tools, that were employed for basic purposes. For some of the predictors, required PoS tags for the text. We were able to use the \href{http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/}{TreeTagger} \cite{schmid2013probabilistic}, which is built to find the tags for many different languages, including French. 
+
+In order to get word representations for computing word similarities, as discussed below in section \cref{sssec:profession}, we used pre-computed word embedding model\footnote{trained by Jean-Philippe Fauconnier. Details on his \href{http://fauconnier.github.io/}{website}}, trained on the frWaC corpus, a 1.6 billion linguistically processed french language corpus constructed from \textbf{.fr} web domains \cite{baroni2009wacky}. The word embeddings were learned using the word2vec algorithm developed by Mikolov et al. \cite{mikolov2013distributed}. In our project, we used these embeddings with \href{https://radimrehurek.com/gensim/models/word2vec.html}{\texttt{gensim}'s \texttt{word2vec}} module for \texttt{python}.

@@ -1,0 +1,17 @@
+\section{Conclusion}
+
+This report attempts to establish a variety of feasible implementations and to evaluate the performance of predictors on characters' metadata drawn from 19th century French literature. We presented three predictors aiming at distinct aspects of what one can call a character sheet: describing what a character \textit{does}, \textit{is} and \textit{affects}. We hope this gives insight into further development that can happen in this regard.
+
+As some examples, consider aspects like family, age, physical looks. These could all be approached in a similar light to our `job' predictor, i.e. working with some compiled corpus of relevant terms, and extracting them from a character document, with the help of structural guidance. Understanding the social status of a character would need detection of special terms, but probably be strengthened by extraction of structural features of speech formalism, similar to our approach in extracting `gender'.
+
+Of course further work is possible, also in the sense of improving the current results, by, for example, reducing the ambiguity around different character namings (i.e. MrFogg, Fogg, PhileasFogg are given as three different characters in our case). A method is given by \cite{elson2010extracting} to resolve variations by assigning names to a most likely variation of another character, in a form of clustering. Some of these variations can be resolved obviously, especially when they are in different combinations of the title, first name and surname of a character, by computing these variations and grouping the matching names.
+
+On top of this, it can be seen as even more important and useful to perform coreference resolution on pronouns, and not just proper nouns. According to \cite{bamman2014bayesian}, approximately 74\% of references to characters in books come in the form of pronouns. This would greatly increase the breadth and precision of each character's document.
+
+A system for assigning direct speech, as in \cite{flekova2015personality}, would, among other things, improve our understanding of the nuances around a characters sentiment polarity (is the sentiment coming from or in reference to a character).
+
+Of course even more advanced methods like dependency parsing could help give deeper insights into a character's metadata, but this would be taking these questions beyond the scope set for this project.
+
+A clear assessment of the quality of a pre-computed word embedding would help understand its efficiency regarding a specific question such as the one posed in this work. On top of this, it would be helpful to have a method for generating a vector representation for out-of-vocabulary words as well, which occurred surprisingly often, given the size of the set used to train the model.
+
+Overall, the results for the three predictors examined show that it is, possible, with limited resources, to establish elements of character's metadata with a high probability. An exact match for professional activity is returned among the top 5 guesses for 71\% of characters examined. Gender can be predicted with 87\% accuracy. A polarity label can be given to major characters' sentiment affect with reasonable certainty, given access to the tools. This is an initial indicator of how such shallow NLP techniques can be applied to various problems, without any extensive linguistic domain knowledge, or access to high-level tools.

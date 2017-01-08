@@ -12,6 +12,8 @@ from random import randrange
 import requests
 from ast import literal_eval
 import random
+import codecs
+import csv
 
 
 def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=False, gender=False, sentiment=False):
@@ -60,10 +62,10 @@ def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=Fal
 
     if gender:
         # Compute predictions
-        gender_nosolo = genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=False)
-        gender_solo = genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=True)
-        gender_nosolo_w = genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=False, weighted=True)
-        gender_solo_w = genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=True, weighted=True)
+        gender_nosolo = genderPredictor(book, sentences, sents_by_char, char_list, gender_label, full=True, solo=False)
+        gender_solo = genderPredictor(book, sentences, sents_by_char, char_list, gender_label, full=True, solo=True)
+        gender_nosolo_w = genderPredictor(book, sentences, sents_by_char, char_list, gender_label, full=True, solo=False, weighted=True)
+        gender_solo_w = genderPredictor(book, sentences, sents_by_char, char_list, gender_label, full=True, solo=True, weighted=True)
 
         # Save to csv
         gender_nosolo.to_csv(save_path + 'gender_nosolo.csv', encoding='utf-8')
@@ -165,7 +167,7 @@ def sentimentPredictor(sentences, sents_by_char, char_list, solo=False, reduced=
     return df
 
 
-def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True, solo=False, weighted=False):
+def genderPredictor(book, sentences, sents_by_char, char_list, gender_label, full=True, solo=False, weighted=False):
     """
     Get gender predictions for full list of chars. Return DataFrame
     """
@@ -190,6 +192,17 @@ def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True
     m_art = [u'le', u'ce', u'mon']
     art_tags = ['DET:ART', 'PRO:DEM', 'DET:POS'] # use this for sanity check
 
+    # Load name gender scores if already existing
+    try:
+        name_scores = pd.read_csv('metadata/' + book + '_char_name_scores.csv')
+        name_scores.set_index('Character', inplace=True)
+        # with codecs.open('metadata/' + book + '_char_name_scores.csv', mode='r', encoding='utf8') as f:
+            # reader = csv.reader(f)
+            # next(reader)
+            # name_scores = {rows[1]:float(rows[2]) for rows in reader}
+    except IOError:
+        name_scores = pd.DataFrame({'A' : []})
+
     for i, character in enumerate(char_list):
         char_sents = sents_by_char[character]
 
@@ -202,16 +215,27 @@ def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True
 
         # First name
         split = camelSplit(character)
-        # Limited to 1000 requests per day
-        r = requests.get('https://api.genderize.io/', params={'name':split[0]})
-        if r.status_code != 200:
+
+        # Use prequeried name gender scores if existing
+        if not name_scores.empty and len(split[0]) > 1:
+            tmp_character = codecs.encode(character, 'utf-8')
+            try:
+                name = name_scores.get_value(tmp_character, 'Name_score')
+            except KeyError:
+                pass
+        else:
+            # Limited to 1000 requests per day
+            r = requests.get('https://api.genderize.io/', params={'name':split[0]})
+            if r.status_code != 200:
+                print(r.content)
             print(r.content)
-        res = objFromByte(r)
-        if res:
-            if res['gender'] == 'female':
-                name = res['probability']
-            elif res['gender'] == 'male':
-                name = -res['probability']
+            res = objFromByte(r)
+            if res:
+                n_score = res['probability']
+                if res['gender'] == 'female' and len(split[0]) > 1:
+                    name = n_score
+                elif res['gender'] == 'male' and len(split[0]) > 1:
+                    name = -n_score
 
         if solo:
             # Get list of sents with only char in them
@@ -292,10 +316,12 @@ def genderPredictor(sentences, sents_by_char, char_list, gender_label, full=True
         # Positive score -> f, negative -> m
         w1 = w2 = w3 = w4 = w5 = w6 = 1.0
         if weighted:
+            if not solo:
             # trained on nosolo
-            # [w1, w2, w3, w4, w5, w6] = [2, 3, 1, 1, 2, 2]
+                [w1, w2, w3, w4, w5, w6] = [2, 3, 1, 1, 2, 1]
+            else:
             # trained on solo
-            [w1, w2, w3, w4, w5, w6] = [2, 3, 1, 1, 3, 2]
+                [w1, w2, w3, w4, w5, w6] = [2, 3, 1, 1, 3, 1]
 
         res = '' # If empty, undecidable
         score = w1 * title + w2 * title_in_name + w3 * adj + w4 * pron + w5 * art + w6 * name

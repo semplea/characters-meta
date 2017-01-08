@@ -1,0 +1,21 @@
+\section{Related work}
+From the work done previously around the topic of automatic information extraction around literary characters, we identify some strands that we discuss here below. Among them are the following: the role a character plays within a narrative (e.g. protagonist, antagonist, mentor), understanding a character's profile, in the real world psychological sense, and extracting information about relations between characters. 
+
+\subsection{Character roles}
+In \cite{groza2015information}, a system is presented in which information is extracted about characters by interleaving NLP and reasoning on ontologies. By an efficient use of domain knowledge, they work with a set of rules that identify characters and match them with a concept, and then a character type in the ontology. The ontology was constructed specifically for their purposes, by formalizing knowledge on the folktale domain from different sources. 
+
+Other approaches focus on developing systems less specific to genres or authors. In \cite{bamman2014bayesian}, a bayesian mixed effects model is presented that focuses on identifying latent character types in a very large english language corpus in an unsupervised manner. They define their character types as a distribution over various categories of typed dependency relations (agent, patient, possessive, predicative). A hierarchical Bayes approach is adopted, in which a word linked to a character is dependent not only on the character's latent persona, but also the background likelihood of both the word and the author.
+
+There are tangential lines of work where character roles are learned with regard to specific events. This can of course lead to understanding the role of characters in a wider narrative. In \cite{chambers2013event}, the authors present a generative entity-driven model for event schema induction. Their modeling of the role uses the coreference chain of a character as the focus.
+
+
+\subsection{Character profiling}
+The work in this direction seems less frequent, presumably because it is focusing on the intersection of two domains, i.e. the study of literary characters on the one hand, and that of real world psychological personas on the other.
+
+In \cite{flekova2015personality}, the authors describe a method for extracting the personality profile of fictional characters, based on the Five Factor Model of personality \cite{mccrae1992introduction}. They frame the problem of personality prediction as a classification task, and use both lexical resource-based features and vector-space semantics. The classification is thus based on features ranging from character actions to descriptive elements rather than personality assessing questionnaires, which is the real-world standard.
+
+\subsection{Character relations}
+Much of the work done in identifying typed or untyped relations between fictional characters relies on the construction of social networks from literary works. In \cite{elson2010extracting}, the authors present a system that relies on extracting interactions by identifying dialogues between characters. 
+
+In \cite{kokkinakis2011character}, on top of the social network extraction, using character interactions and also various vocabulary and lexical semantic resources, the authors posit that such a network structure can potentially inform about character metadata, such as birthplace, workplace, by constructing a network of character-location interaction, and using lexical semantic resources. This can be considered a potential extension of the work presented in this paper.
+
