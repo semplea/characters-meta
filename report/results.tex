@@ -83,7 +83,7 @@ This failing of the `solo' data seems to be an argument against our 3rd hypothes
 \centering
 \begin{tabular}{| >{\bf}l || *{5}{c|}}
 \hline
-					& Accuracy & Precision	& Recall & F-score & Known ratio	\\ \hline \hline
+		& Accuracy & Precision	& Recall & F-score & Known ratio\\ \hline \hline
 GFNW	& 0.873 & 0.758 & 0.979	& 0.854	& 0.83 	\\ \hline
 GSNW	& 0.878	& 0.793	& 0.938	& 0.859	& 0.81	\\ \hline
 GFW		& 0.88	& 0.767	& 0.978	& 0.859	& 0.83 \\ \hline
@@ -134,31 +134,39 @@ By the nature of our features (specific word types or words occurring in window 
 \subsection{Sentiment predictor}
 The results of the sentiment predictor on the characters is meaningful mainly for major characters. The API used returns the result `neutral' for most sentences it receives (c.f. \cref{fig:sent_prop}. So for a small number of sentences, we will have only a handful that indicate any sentiment, according to the NLTK tool we use. This may be due to a justifiably conservative predicting scheme on the part of the text classifier, however it has as a consequence that we're unable to extract a truthful understanding around the sentiment pertaining to a character in a novel, which is often associated with hundreds of sentences, and a wide range of polar descriptions.
 
-Some characters with obvious polarities associated with them (i.e. Mrs Aouada, from \textit{Le Tour du Monde en 80 Jours} should be positive, Hutin from \textit{Au Bonheur des Dames} should be negative), are predicted with the wrong or no polarity (c.f. \cref{tab:full_vs_red}). 
+Some characters with obvious polarities associated with them (i.e. Mrs Aouada, from \textit{Le Tour du Monde en 80 Jours} should be positive, Hutin from \textit{Au Bonheur des Dames} should be negative) are predicted with the wrong or no polarity (c.f. \cref{tab:full_vs_red}).
+
+As mentioned in \cref{sssec:sentiment}, we compared the extracted NLTK sentiment metrics with the LIWC \cite{liwc2015} `emopos' and `emoneg' variables, gotten on the full character documents for the top 5 characters in each of our 5 books. The results were proportionally similar (almost identical) when computed on the same filtered sentences we used for the NLTK sentiment score and the raw sentence, which is an indicator of the efficiency of the filtering. In this way, we were able to provide less words, i.e. a less computationally intense operation, while achieving as effective results.
+
+We expected similar results, since both methods are dictionary based. However there seems to be less variability in the LIWC results, as shown for the characters in \cref{tab:full_vs_red}. All characters tested have higher positive emotion variable values than the negative, but there are some telling differences in the ratio between them. For example `MrsAouda' has a significantly higher pos-to-neg ratio than `Bourdoncle'. This is also reflected in the NLTK values extracted.
 
 With additional resources, less limited access to the NLTK text sentiment classification API, we could have compromised less. In order to truly evaluate such a result, as we did for the `gender' predictor, we would need access to expert-reviewed labels for a set of books. Associated sentiment is too ambiguous a notion for us to make a decision about the less than obvious characters. We also didn't intend for this predictor to answer a precise question about a character's sentiment throughout a narrative, but rather to understand sentiment associated with a character like a bubble surrounding his or her actions. 
 
-\begin{table}
-\centering
-\begin{tabular}{| l | l || *{4}{c|}}
-\hline
-& Doc size & Pos-ratio & Neg-ratio	& Neut-ratio & Total count	\\ \hline \hline
-\multirow{2}{*}{Denise} & reduced & 0.059 & 0.059 & \bf 0.882 & 51 \\ \cline{2-6}
-& full & \bf 0.074 & 0.049 & 0.877	& 511 	\\ \hline
 
-\multirow{2}{*}{Hutin} & reduced	& 0.0	& 0.0	& \bf 1.00	& 12 \\ \cline{2-6}
-	& full & 0.032 & 0.032 & \bf 0.935	&  124	\\ \hline
+\begin{table}
+\centerfloat
+\begin{tabular}{| l | l || *{6}{c|}}
+\hline
+& Doc size & Pos & Neg	& Neut & LIWC-pos & LIWC-neg & Count	\\ \hline \hline
+\multirow{2}{*}{Denise} & reduced & 0.059 & 0.059 & \bf 0.882 & & & 51 \\ \cline{2-8}
+& full & \bf 0.074 & 0.049 & 0.877	& 5.99 & 3.88 & 511 	\\ \hline
+
+\multirow{2}{*}{Hutin} & reduced & 0.0	& 0.0 & \bf 1.00 & & & 12 \\ \cline{2-8}
+& full & 0.032 & 0.032 & \bf 0.935	& 4.46 & 3.38 & 124	\\ \hline
     
-\multirow{2}{*}{Bourdoncle}	& reduced & 0.0	& 0.0	& \bf 1.0	& 11 \\ \cline{2-6}
-	& full & \bf 0.085 & 0.043 & 0.872 & 117 \\ \hline
+\multirow{2}{*}{Bourdoncle}	& reduced & 0.0	& 0.0 & \bf 1.0 & & & 11 \\ \cline{2-8}
+	& full & \bf 0.085 & 0.043 & 0.872 & 5.09 & 4.04 & 117 \\ \hline
     
-\multirow{2}{*}{MrsAouda} & reduced	& 0.083	& \bf 0.167	&  0.88 & 12 \\ \cline{2-6}
-	& full & \bf 0.062 & 0.039 & 0.899	& 129 	\\ \hline
+\multirow{2}{*}{MrsAouda} & reduced	& 0.083	& \bf 0.167	&  0.88 & & &  12 \\ \cline{2-8}
+	& full & \bf 0.062 & 0.039 & 0.899 & 6.47 & 2.60 & 129 \\ \hline
 
 \end{tabular}
-\caption{Performance of the sentiment predictor on some main characters. A character is said to be positive if it has a higher ratio than the negative, and vice-versa.}
+
+\caption{Performance of the sentiment predictor on some main characters. A character is said to be positive if it has a higher ratio than the negative, and vice-versa. The LIWC scores are given as they were retrieved, without any processing, so should be compared among themselves only, to get an idea of the proportion of pos-to-neg. `Count' contains the total occurrence count of the character.}
 \label{tab:full_vs_red}
 \end{table}
+
+
 
 \vspace{3em}
 

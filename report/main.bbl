@@ -69,6 +69,11 @@ Tomas Mikolov, Ilya Sutskever, Kai Chen, Greg~S Corrado, and Jeff Dean.
 \newblock In {\em Advances in neural information processing systems}, pages
   3111--3119, 2013.
 
+\bibitem{liwc2015}
+James~W Pennebaker, Martha~E Francis, Roger~J Booth, and Ryan~L Boyd.
+\newblock Linguistic inquiry and word count: Liwc2015.
+\newblock {\em Austin TX, Pennebaker Conglomerates}, 2015.
+
 \bibitem{perkins2010textclass}
 Jacob Perkins.
 \newblock Text classification for sentiment analysis - naive bayes classifier.

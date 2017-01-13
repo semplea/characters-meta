@@ -78,8 +78,8 @@ def runMeta(book, sentences, wsent, char_list, job_labels, gender_label, job=Fal
         sentiment_nosolo = sentimentPredictor(sentences, sents_by_char, char_list, reduced=False)
         sentiment_nosolo.to_csv(save_path + 'sentiment_nosolo_top.csv', encoding='utf-8')
 
-        sentiment_solo = sentimentPredictor(sentences, sents_by_char, char_list, reduced=False, solo=True)
-        sentiment_solo.to_csv(save_path + 'sentiment_solo_top.csv', encoding='utf-8')
+        # sentiment_solo = sentimentPredictor(sentences, sents_by_char, char_list, reduced=False, solo=True)
+        # sentiment_solo.to_csv(save_path + 'sentiment_solo_top.csv', encoding='utf-8')
         # sentimentPredictor(book, sentences, sents_by_char, char_list, reduced=False, write=True)
 
     # Print stats

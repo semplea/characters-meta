@@ -1,7 +1,5 @@
 \documentclass[a4paper, 11pt, titlepage]{article}
 
-%\usepackage[tmargin=2cm, lmargin=2.3cm, rmargin=2.3cm, headsep=1cm, headheight=2cm]{geometry}
-% \usepackage{geometry}
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath}
@@ -19,6 +17,13 @@
 \usepackage[font=small,labelfont=small]{caption}
 \usepackage{subcaption}
 
+\makeatletter
+\newcommand*{\centerfloat}{%
+  \parindent \z@
+  \leftskip \z@ \@plus 1fil \@minus \textwidth
+  \rightskip\leftskip
+  \parfillskip \z@skip}
+\makeatother
 
 \usepackage{listings}
 \lstset{
@@ -78,7 +83,73 @@ EPFL}
 
 \begin{document}
 
-\maketitle 
+\begin{titlepage}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
+
+\center % Center everything on the page
+ 
+%----------------------------------------------------------------------------------------
+%	HEADING SECTIONS
+%----------------------------------------------------------------------------------------
+\begin{figure}[t]
+\centering
+\includegraphics[scale=0.25]{fig/EPFL}
+\end{figure} 
+\vspace{3em}
+
+\textsc{\large Department of Computer Science \\ semester project}\\[0.9cm] % Minor heading such as course title
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\HRule \\[0.4cm]
+{ \Large \bfseries A shallow NLP approach to characterization in \\French 19th century literature}\\ [0.3cm] % Title of your document
+\HRule \\[2.5cm]
+ 
+%----------------------------------------------------------------------------------------
+%	AUTHOR SECTION
+%----------------------------------------------------------------------------------------
+
+\begin{minipage}{0.4\textwidth}
+\begin{flushleft} \large
+\emph{Authors:}\\
+Alexis \textsc{Semple}
+\end{flushleft}
+\end{minipage}
+~
+\begin{minipage}{0.4\textwidth}
+\begin{flushright} \large
+\emph{Supervisors:} \\
+Cyril \textsc{Bornet}\\ 
+Frédéric \textsc{Kaplan}
+\end{flushright}
+\end{minipage}\\[4cm]
+
+% If you don't want a supervisor, uncomment the two lines below and remove the section above
+%\Large \emph{Author:}\\
+%John \textsc{Smith}\\[3cm] % Your name
+
+%----------------------------------------------------------------------------------------
+%	DATE SECTION
+%----------------------------------------------------------------------------------------
+
+{\large \today}\\[3cm] % Date, change the \today to a set date if you want to be precise
+
+%----------------------------------------------------------------------------------------
+%	LOGO SECTION
+%----------------------------------------------------------------------------------------
+
+%\includegraphics{Logo}\\[1cm] % Include a department/university logo - this will require the graphicx package
+ 
+%----------------------------------------------------------------------------------------
+
+\vfill % Fill the rest of the page with whitespace
+
+\end{titlepage}
+
+\newpage\null\thispagestyle{empty}\newpage 
 
 % ABSTRACT HERE
 \begin{abstract}

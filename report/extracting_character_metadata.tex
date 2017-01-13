@@ -143,9 +143,11 @@ We used a gender determination service \footnote{\href{https://genderize.io/}{ht
 
 In order to best combine the scores of these methods, we wanted to approximate good weights for each. We did this by a logistic regression on our labeled data set, using the different scores computed as features, and used these approximate weights for the model. Seeing as we have very few data points labeled, this is by no means a sufficient method, but it gives us an idea of the importance of each `feature'.
 
-\subsubsection{Sentiment} 
+\subsubsection{Sentiment} \label{sssec:sentiment}
 In order to predict the sentiment associated with a character $c_i$, we used an external API, powered by NLTK \cite{perkins2010textclass}. This is a Naive Bayes classifier, trained on movie reviews and tweets. The language of the training data is thus quite different from what we can expect from 19th century literature, but not so much so that it is irrelevant.
 
 Given the limitations of the API, we weren't able to query the sentiment of the full document $D^{c_i}$. We assumed a subset (usually 10\%) of the document would be enough to gather insights. In order to make the query more revealing however, we used only words with sentiment-relevant PoS tags in the document, i.e. \texttt{'NOM', 'ADJ', 'PUN', 'VER', 'ADV'}. Additionally, we work with the lemmatized versions of the document, in order to avoid morphological variations.
 
 We query the API for each window $W \in D^{c_i}$. The result of a call is a `label', either `pos', `neg' or `neutral', and the corresponding probabilities. A natural way to decide the general sentiment associated with $c_i$ is then to pick the majority label for $D^{c_i}$.
+
+Additionally, we were able to perform an evaluation with the Linguistic Inquiry and Word Count tool \cite{liwc2015} \footnote{\href{https://liwc.wpengine.com/}{LIWC} uses word dictionaries to extract psychometric properties from natural language text. This includes emotional affect, split into positive and negative emotions.}. This served to double check the reliability of our results and as a comparison of different methods at the same time. Note that this tools requires a license to be used.
